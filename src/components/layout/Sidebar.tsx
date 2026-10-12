@@ -1,0 +1,64 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Suspense } from "react";
+import { AuntieBao } from "@/components/mascot/AuntieBao";
+import { cn } from "@/utils";
+import { NAV_ITEMS, type NavKey } from "./navItems";
+
+function activeKey(pathname: string): NavKey | null {
+  if (pathname.startsWith("/home") || pathname.startsWith("/roast") || pathname.startsWith("/ask")) return "home";
+  if (pathname.startsWith("/pay")) return "pay";
+  if (pathname.startsWith("/ledger")) return "ledger";
+  if (pathname.startsWith("/settings") || pathname.startsWith("/patterns") || pathname.startsWith("/demo")) return "settings";
+  return null;
+}
+
+function SidebarView({ active }: { active: NavKey | null }) {
+  return (
+    <aside className="hidden h-dvh w-[240px] flex-none flex-col gap-[32px] border-r border-line bg-white px-[16px] pt-[28px] pb-[24px] lg:flex">
+      <span className="flex items-center gap-[10px] px-[8px]">
+        <AuntieBao mood="sleep" width={40} height={37} />
+        <span className="font-display text-[22px] leading-none font-bold">
+          Aunt<span className="text-teal">ified</span>
+        </span>
+      </span>
+      <nav aria-label="Main" className="flex flex-col gap-[4px]">
+        {NAV_ITEMS.map(({ key, label, href, Icon }) => {
+          const isActive = key === active;
+          return (
+            <Link
+              key={key}
+              href={href}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "flex min-h-[44px] items-center gap-[12px] rounded-[12px] px-[12px] text-[15px] no-underline",
+                isActive ? "bg-wash font-bold text-teal" : "font-medium text-night",
+              )}
+            >
+              <Icon size={20} className={cn("flex-none", isActive ? "text-teal" : "text-muted")} />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+      <p className="m-0 mt-auto px-[12px] text-[12px] leading-[1.45] font-medium text-muted">
+        An assistant, not a financial adviser. Demo data, no bank connected.
+      </p>
+    </aside>
+  );
+}
+
+function SidebarWithPath() {
+  const pathname = usePathname();
+  return <SidebarView active={activeKey(pathname)} />;
+}
+
+export function Sidebar() {
+  return (
+    <Suspense fallback={<SidebarView active={null} />}>
+      <SidebarWithPath />
+    </Suspense>
+  );
+}

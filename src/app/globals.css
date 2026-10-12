@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-teal: #287a74;
+  --color-teal-dark: #1e5f5a;
+  --color-sea: #55a9a0;
+  --color-mint: #aeeed3;
+  --color-sun: #ffe070;
+  --color-cream: #fff4dc;
+  --color-brick: #a6372b;
+  --color-ink: #2b1d14;
+  --color-night: #0f2a28;
+  --color-muted: #3e5c59;
+  --color-line: #e3efec;
+  --color-line-strong: #d3e5e1;
+  --color-wash: #f3faf8;
+  --color-track: #e3f1ee;
+  --color-track-alt: #dcefea;
+  --color-lemon: #fff8b0;
+  --color-lemon-edge: #e8de7a;
+  --color-slate: #6f9893;
+  --color-panel: #fbfdfc;
+  --color-code: #e6f4f0;
+  --color-sand: #e3d3b4;
+
+  --font-display: var(--font-fredoka), sans-serif;
+  --font-sans: var(--font-nunito), sans-serif;
+  --font-mono: ui-monospace, Menlo, monospace;
+
+  --shadow-hard-xs: 0 3px 0 #2b1d14;
+  --shadow-hard-sm: 3px 3px 0 #2b1d14;
+  --shadow-hard-md: 4px 4px 0 #2b1d14;
+  --shadow-hard-lg: 8px 8px 0 #2b1d14;
+}
+
+@layer base {
+  html,
+  body {
+    line-height: normal;
+  }
+  body {
+    margin: 0;
+    background: var(--color-cream);
+    color: var(--color-night);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  a {
+    color: var(--color-teal);
+    text-decoration: underline;
+  }
+  a:hover {
+    color: var(--color-teal-dark);
+  }
+  button,
+  input,
+  select {
+    font-family: inherit;
+    color: inherit;
+  }
+  /* reference relies on the browser default placeholder, preflight dims currentColor instead */
+  input::placeholder {
+    color: #757575;
+  }
+}
+
+/* Customizable <select> (Chromium 135+). Other browsers keep their native list, with our chevron. */
+@supports (appearance: base-select) {
+  .ui-select,
+  .ui-select::picker(select) {
+    appearance: base-select;
+  }
+  .ui-select::picker-icon {
+    display: none;
+  }
+  .ui-select:open + .ui-select-chevron {
+    rotate: 180deg;
+  }
+  .ui-select::picker(select) {
+    margin-block: 6px;
+    padding: 6px;
+    border: 2px solid var(--color-ink);
+    border-radius: 16px;
+    background: white;
+    box-shadow: var(--shadow-hard-md);
+  }
+  .ui-select option {
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-night);
+  }
+  .ui-select option:hover,
+  .ui-select option:focus-visible {
+    background: var(--color-wash);
+    outline: none;
+  }
+  .ui-select option:checked {
+    background: var(--color-mint);
+  }
+  .ui-select option::checkmark {
+    color: var(--color-teal);
+  }
+}
