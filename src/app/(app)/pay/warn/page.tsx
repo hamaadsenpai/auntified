@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { WarnScreen } from "@/features/verdicts";
 
 export default function WarnPage() {
-  return <WarnScreen />;
+  return (
+    <Suspense>
+      <WarnScreen />
+    </Suspense>
+  );
 }

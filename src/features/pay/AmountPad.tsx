@@ -2,13 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import type { Currency } from "@/constants/currencies";
-import { useCurrency } from "@/store";
+import { useCurrency, useSettings } from "@/store";
+import { usePayDraftStore } from "@/store/pay-draft.store";
 import { cn } from "@/utils";
 import { convertFromSgd, formatMoney, formatNumber, withSymbol } from "@/utils/format";
-
-/** The scripted demo transfer and balance, in SGD. */
-export const DEMO_AMOUNT_SGD = 1850;
-export const DEMO_BALANCE_SGD = 2184.6;
 
 const MAX_WHOLE_DIGITS = 10;
 const KEY = "h-[48px] cursor-pointer rounded-[14px] border-2 border-ink bg-cream px-[6px] py-[1px] active:translate-y-[1px] active:bg-lemon";
@@ -51,9 +48,15 @@ export function AmountPad({ children }: { children: ReactNode }) {
 }
 
 function AmountPadInner({ currency, children }: { currency: Currency; children: ReactNode }) {
-  const [value, setValue] = useState(() => String(convertFromSgd(DEMO_AMOUNT_SGD, currency, true)));
-  const overBalance = Number(value) > convertFromSgd(DEMO_BALANCE_SGD, currency);
-  const press = (key: AmountKey, digit = "") => setValue((v) => pressKey(v, key, digit, currency.decimals));
+  const { settings, status } = useSettings();
+  const [value, setValue] = useState(() => String(convertFromSgd(usePayDraftStore.getState().amountSgd, currency)));
+  // The balance is 0 until settings load, so only warn once it is real.
+  const overBalance = status === "ready" && Number(value) > convertFromSgd(settings.balanceSgd, currency);
+  const press = (key: AmountKey, digit = "") => {
+    const next = pressKey(value, key, digit, currency.decimals);
+    setValue(next);
+    usePayDraftStore.getState().setAmountSgd(Number(next) / currency.rate);
+  };
 
   return (
     <>
@@ -65,7 +68,8 @@ function AmountPadInner({ currency, children }: { currency: Currency; children: 
           {display(value, currency)}
         </output>
         <span className={cn("text-[13px] font-medium", overBalance ? "font-semibold text-brick" : "text-muted")}>
-          {overBalance ? "More than you have. " : "From "}Everyday ••4417, {formatMoney(DEMO_BALANCE_SGD, currency)} available
+          {overBalance ? "More than you have. " : "From "}
+          {settings.accountName}, {formatMoney(settings.balanceSgd, currency)} available
         </span>
       </div>
       {children}
@@ -109,7 +113,10 @@ function clean(raw: string, decimals: number) {
 }
 
 function AmountFieldInner({ id, currency }: { id: string; currency: Currency }) {
-  const [value, setValue] = useState(() => formatNumber(convertFromSgd(DEMO_AMOUNT_SGD, currency), currency));
+  const [value, setValue] = useState(() => {
+    const sgd = usePayDraftStore.getState().amountSgd;
+    return sgd > 0 ? formatNumber(convertFromSgd(sgd, currency), currency) : "";
+  });
   const symbol = <span className="font-display text-[40px] font-bold whitespace-nowrap text-muted">{currency.symbol.trim()}</span>;
 
   return (
@@ -121,7 +128,12 @@ function AmountFieldInner({ id, currency }: { id: string; currency: Currency }) 
         inputMode={currency.decimals === 0 ? "numeric" : "decimal"}
         autoComplete="off"
         value={value}
-        onChange={(e) => setValue(clean(e.target.value, currency.decimals))}
+        onChange={(e) => {
+          const next = clean(e.target.value, currency.decimals);
+          const n = Number(next.replace(/,/g, ""));
+          setValue(next);
+          usePayDraftStore.getState().setAmountSgd(Number.isNaN(n) ? 0 : n / currency.rate);
+        }}
         onBlur={() => {
           const n = Number(value.replace(/,/g, ""));
           setValue(value === "" || Number.isNaN(n) ? "" : formatNumber(n, currency));

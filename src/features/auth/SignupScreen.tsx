@@ -1,4 +1,7 @@
+"use client";
+
 import { ROUTES } from "@/constants";
+import { authService } from "@/services/auth.service";
 import { AuthCard } from "./AuthCard";
 import { AuthField } from "./AuthField";
 
@@ -6,16 +9,21 @@ export function SignupScreen() {
   return (
     <AuthCard
       title="Create account"
+      intro="Use Google, or sign up with your email."
       greeting="New? Sit down first. Auntie wants to know who she is looking after."
       submitLabel="Create account"
       switchPrompt="Have an account?"
       switchLabel="Log in"
       switchHref={ROUTES.LOGIN}
+      onSubmit={(data) =>
+        authService.signUpWithEmail(String(data.get("name")).trim(), String(data.get("email")), String(data.get("password")))
+      }
     >
-      <AuthField id="signup-name" label="Name" type="text" autoComplete="name" required />
-      <AuthField id="signup-email" label="Email" type="email" autoComplete="email" inputMode="email" required />
+      <AuthField id="signup-name" name="name" label="Name" type="text" autoComplete="name" required />
+      <AuthField id="signup-email" name="email" label="Email" type="email" autoComplete="email" inputMode="email" required />
       <AuthField
         id="signup-password"
+        name="password"
         label="Password"
         type="password"
         autoComplete="new-password"

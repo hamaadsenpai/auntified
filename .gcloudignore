@@ -1,0 +1,11 @@
+# Uploaded to Cloud Build by scripts/deploy.sh. .env.deploy is the generated
+# build-time env file; every other .env* and the admin key stay local.
+.git
+.next
+node_modules
+graft
+design
+.env*
+!.env.deploy
+*firebase-adminsdk*.json
+tsconfig.tsbuildinfo

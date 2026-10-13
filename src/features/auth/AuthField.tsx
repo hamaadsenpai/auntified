@@ -3,11 +3,12 @@ import { Input } from "@/components/ui";
 
 type AuthFieldProps = {
   id: string;
+  name: string;
   label: string;
   hint?: string;
 } & Omit<ComponentProps<typeof Input>, "id" | "name">;
 
-/** Label + input. No `name` on purpose: the demo form submits as GET and must not put values in the URL. */
+/** Label + input. */
 export function AuthField({ id, label, hint, ...props }: AuthFieldProps) {
   const hintId = hint ? `${id}-hint` : undefined;
   return (

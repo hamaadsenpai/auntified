@@ -41,7 +41,7 @@ type CurrencyPickerProps = {
 
 export function CurrencyPicker({ id, variant = "bold", className }: CurrencyPickerProps) {
   const currency = useCurrency();
-  const setCurrency = useCurrencyStore((s) => s.setCurrency);
+  const saveCurrency = useCurrencyStore((s) => s.saveCurrency);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -80,7 +80,7 @@ export function CurrencyPicker({ id, variant = "bold", className }: CurrencyPick
   }
 
   function choose(c: Currency) {
-    setCurrency(c.code);
+    void saveCurrency(c.code);
     close();
   }
 

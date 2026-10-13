@@ -1,0 +1,14 @@
+.git
+.next
+node_modules
+graft
+design
+*.md
+.env*
+*firebase-adminsdk*.json
+tsconfig.tsbuildinfo
+Dockerfile
+.dockerignore
+.gcloudignore
+cloudbuild.yaml
+scripts

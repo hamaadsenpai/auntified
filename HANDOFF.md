@@ -1,6 +1,6 @@
 # Auntified UI: Handoff
 
-The build is **UI only**. There is no backend, Firebase Admin, axios or API routes yet: those are still the plan in `BOILERPLATE.md`. The Firebase client SDK is set up for sign-in only (`src/lib/firebase/client.ts`, config in `.env.local`) but nothing calls it yet. Every screen is a static copy of the design references, using the demo data from those references.
+The app screens show the signed-in user's own Firestore data (see "User data (CRUD)" below), and **sign-in is real**: Firebase Auth (email/password and Google) with server-side session cookies, and a `users/{uid}` doc in Firestore. See "Auth" below. The rest of the backend (API routes for data, repositories, axios) is still the plan in `BOILERPLATE.md`.
 
 - **Source of truth:** `design/Auntie Ledger.dc.html` and `design/Auntie Bao.dc.html`, copied from `~/Downloads/Auntie Ledger UI mockups/`.
 - **Stack:** Next.js 16.4 (App Router, Turbopack), React 19.3, Tailwind CSS 4.3, TypeScript, `clsx` + `tailwind-merge`.
@@ -44,7 +44,7 @@ The build is **UI only**. There is no backend, Firebase Admin, axios or API rout
   - Features → `/features` (cards from `src/features/marketing/features.ts`)
   - Log in → `/login`
   - Sign up → `/signup`
-  - Demo only: the forms submit to `/home` and their fields have no `name`, so nothing typed ends up in the URL.
+  - Real sign-in (see "Auth" below). After it, users land on `?next=` or `/home`.
 - [x] Checks:
   - `tsc`, `lint` and `build` are clean, with 28/28 pages generated (four public pages included).
   - Every route returns 200.
@@ -52,6 +52,16 @@ The build is **UI only**. There is no backend, Firebase Admin, axios or API rout
   - No raw hex colors in `className`.
 - [x] Text check: all 22 reference sections have **0 missing words, phrases or aria labels** on their routes.
 - [x] Screenshots spot-checked at 390×844 (Home, Pay, Interrogation, Blocked) and 1440×900 (Home): they match the references.
+- [x] Remove dummy data; real CRUD per user (Firestore, `users/{uid}` + subcollections):
+  - [x] Shared contract: `src/types/{payee,transfer,expense,settings,ask}.ts`, `src/constants/data.ts`, `ENDPOINTS`/`COLLECTIONS`, services, stores (`src/store/{collection,payees,transfers,expenses,settings,pay-draft}.store.ts`, `data-hooks.ts`)
+  - [x] API + repositories: payees, transfers (+ check outcome), expenses, settings, `/api/ask`
+  - [x] Quick check scores the real transfer (`buildTransferFacts`), `DEMO_TRANSFER` removed
+  - [x] Pay flow: pick/add payee, amount, reference → create transfer → review → check
+  - [x] Verdicts (warn: pay anyway/cancel; blocked; score) and payee detail (edit, report, remove)
+  - [x] Home + History from transfers/expenses; working filters; delete history rows
+  - [x] Weekly roast = expenses CRUD; Patterns computed; Ask Auntie chat live (mobile + desktop)
+  - [x] Settings: tone, language, voice, account name, balance, trusted contact, savings goal
+  - [x] `tsc`, `lint`, `build` clean; API routes return 401 signed out and 403 on bad origin
 
 ---
 
@@ -105,6 +115,52 @@ src/
 ### Dropdowns
 
 - Use `Select` from `@/components/ui` (`variant="bold" | "soft"`). It is a real `<select>` with our chevron. Chromium also gets a styled dropdown through `appearance: base-select` (`globals.css`), and other browsers fall back to their native list.
+
+## Auth
+
+| Piece | File |
+| --- | --- |
+| Sign-in (client SDK, in-memory persistence, popup for Google) | `src/services/auth.service.ts`, `src/lib/firebase/client.ts` |
+| ID token → httpOnly `session` cookie (5 days), logout + token revocation | `src/app/api/auth/session/route.ts` (POST / DELETE, same-origin check) |
+| Create `users/{uid}` on first sign-in, `lastLoginAt` after | `src/server/repositories/users.repository.ts` |
+| Optimistic redirect to `/login?next=…` when there is no cookie | `src/proxy.ts` (the `(app)` pages; boards and public pages stay open) |
+| Real check (signature, expiry, revocation) | `getCurrentUser()` / `requireUser()` in `src/server/auth/session.ts`, run by `SessionGuard` in `(app)/layout.tsx` |
+| Who is signed in + Log out | Settings (`features/settings/Account.tsx`, `LogoutButton.tsx`) |
+
+- With `cacheComponents`, anything that reads the session must sit inside `<Suspense>`. `getCurrentUser` uses `"use cache: private"`, so it runs once per request and is never stored in a server cache.
+- Firestore is only touched through `firebase-admin`. `firestore.rules` denies all browser access; deploy it (or paste it into the console).
+- Admin credentials come from `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` in `.env.local`.
+
+## AI (Gemini)
+
+`/pay/check` is a live Gemini conversation: Auntie asks up to 3 questions, then gives a verdict.
+
+| Piece | File |
+| --- | --- |
+| Gemini client (`@google/genai`, `GEMINI_API_KEY`, `GEMINI_MODEL` default `gemini-3.8-flash`, `GEMINI_FALLBACK_MODEL` on 503/429) | `src/lib/ai/gemini.ts`, `src/lib/env.server.ts` |
+| Demo transfer + deterministic rule score (max 46) | `src/server/check/transfer.ts` |
+| Prompt, JSON-schema output, model score (max 54), verdict (pass < 40, warn < 70, block) | `src/server/check/quick-check.ts` |
+| `POST /api/pay/check` (signed in, same-origin, transcript validated with zod) | `src/app/api/pay/check/route.ts` |
+| Client state shared by the mobile and desktop layouts | `src/features/pay/QuickCheckProvider.tsx` |
+
+- The client sends the whole transcript each turn; the server holds no conversation state.
+- Gemini failures return `502 AI_UNAVAILABLE` and the screen offers "Try again".
+- The mic button is still decorative.
+
+## User data (CRUD)
+
+Client components read through the `@/store` hooks (`usePayees`, `useTransfers`, `useExpenses`, `useSettings`), which load once per page load. Writes go store → service → `/api/*` (`withHandler`, zod) → `src/server/repositories/*`.
+
+| Data | Firestore | API |
+| --- | --- | --- |
+| Settings (account name, balance, tone, language, voice, trusted contact, savings goal) | fields on `users/{uid}` | `GET/PATCH /api/me/settings` |
+| Payees | `users/{uid}/payees` | `/api/payees`, `/api/payees/[id]` |
+| Transfers (status `pending → passed/warned/blocked`, `warned → overridden/cancelled`) | `users/{uid}/transfers` | `/api/transfers`, `/api/transfers/[id]`; verdict written by `/api/pay/check` |
+| Expenses (weekly roast, patterns) | `users/{uid}/expenses` | `/api/expenses`, `/api/expenses/[id]` |
+
+- A sent transfer (`passed` or `overridden`) debits `balanceSgd` and bumps the payee's `transferCount`/`totalSentSgd` in one transaction. Deleting a transfer only removes the record.
+- Pay-flow pages take the transfer as `?id=` (`withTransfer(route, id)`).
+- Boards (`/eval`, `/plugin`, `/kit`, `/mascot`), `/demo`, and the public pages still show design content.
 
 ## Deliberate differences from the reference
 

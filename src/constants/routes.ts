@@ -3,6 +3,7 @@ export const ROUTES = {
   FEATURES: "/features",
   LOGIN: "/login",
   SIGNUP: "/signup",
+  ONBOARDING: "/onboarding",
   HOME: "/home",
   ROAST: "/roast",
   ASK: "/ask",
@@ -22,3 +23,6 @@ export const ROUTES = {
   KIT: "/kit",
   MASCOT: "/mascot",
 } as const;
+
+/** A pay-flow route for one transfer, e.g. withTransfer(ROUTES.PAY_REVIEW, id) → "/pay/review?id=…". */
+export const withTransfer = (route: string, id: string) => `${route}?id=${encodeURIComponent(id)}`;
