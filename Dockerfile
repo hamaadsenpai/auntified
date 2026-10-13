@@ -12,11 +12,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # public/ is empty and empty dirs don't survive the upload; the runner copies it.
 RUN mkdir -p public
-# Build-time env comes in as a BuildKit secret (an .env file), so NEXT_PUBLIC_* get
-# inlined and server vars exist while prerendering, without landing in an image layer.
-# Standalone output copies loaded .env files, so strip them in the same step.
-RUN --mount=type=secret,id=dotenv,target=/app/.env.production,required=true \
-    npm run build && rm -f .next/standalone/.env*
+# Config comes from the committed .env.production (standalone output copies it, so the
+# server reads it at runtime too). The secret keys come in as a BuildKit secret mounted
+# as .env.production.local: present while prerendering, never copied or kept in a layer.
+RUN --mount=type=secret,id=dotenv,target=/app/.env.production.local,required=true \
+    npm run build
 
 FROM node:22-slim AS runner
 WORKDIR /app

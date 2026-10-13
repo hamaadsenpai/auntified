@@ -1,11 +1,11 @@
-# Uploaded to Cloud Build by scripts/deploy.sh. .env.deploy is the generated
-# build-time env file; every other .env* and the admin key stay local.
+# What `gcloud builds submit` (scripts/deploy.sh) uploads. Only the committed,
+# secret-free .env.production goes up; .env.local and the admin key stay local.
 .git
 .next
 node_modules
 graft
 design
 .env*
-!.env.deploy
+!.env.production
 *firebase-adminsdk*.json
 tsconfig.tsbuildinfo

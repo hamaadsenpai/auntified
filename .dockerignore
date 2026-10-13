@@ -5,6 +5,7 @@ graft
 design
 *.md
 .env*
+!.env.production
 *firebase-adminsdk*.json
 tsconfig.tsbuildinfo
 Dockerfile
