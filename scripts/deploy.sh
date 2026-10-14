@@ -5,6 +5,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-gcloud builds submit --project drinking-game-sl --region asia-south1 \
+gcloud builds submit --project auntified-6eb1b --region asia-south1 \
   --config cloudbuild.yaml \
-  --service-account projects/drinking-game-sl/serviceAccounts/140661425155-compute@developer.gserviceaccount.com .
+  --service-account projects/auntified-6eb1b/serviceAccounts/648439492707-compute@developer.gserviceaccount.com .
