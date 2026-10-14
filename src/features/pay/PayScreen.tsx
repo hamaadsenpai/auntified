@@ -6,12 +6,14 @@ import { BottomNav, Screen } from "@/components/layout";
 import { Avatar, Button, Input, Tag } from "@/components/ui";
 import { LIMITS, ROUTES, withTransfer } from "@/constants";
 import { PayeeForm } from "@/features/payees/PayeeForm";
-import { usePayees, usePayeesStore, useTransfersStore } from "@/store";
+import { usePayees, usePayeesStore, useSettings, useSettingsStore, useTransfersStore } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
 import type { ApiFailure } from "@/types/api";
 import type { CreatePayee, Payee } from "@/types/payee";
 import type { CreateTransfer, Transfer } from "@/types/transfer";
+import { accountOf } from "@/utils/accounts";
 import { AmountPad } from "./AmountPad";
+import { FromAccountSelect } from "./FromAccountSelect";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -62,13 +64,15 @@ export function useSubmitDraft() {
   const [error, setError] = useState<string | null>(null);
 
   async function submit(route: string) {
-    const { transferId, payeeId, amountSgd, reference } = usePayDraftStore.getState();
+    const { transferId, payeeId, amountSgd, reference, fromAccountId } = usePayDraftStore.getState();
     if (!payeeId) return setError("Choose who you are paying first.");
     if (!(amountSgd > 0)) return setError("Enter an amount more than zero.");
     setPending(true);
     setError(null);
     try {
-      const transfer = await saveDraftTransfer(transferId, { payeeId, amountSgd, reference: reference.trim() });
+      // The picked account, or the main one if it was removed since.
+      const from = accountOf(useSettingsStore.getState().settings, fromAccountId).id;
+      const transfer = await saveDraftTransfer(transferId, { payeeId, amountSgd, reference: reference.trim(), fromAccountId: from });
       usePayDraftStore.getState().setTransferId(transfer.id);
       router.push(withTransfer(route, transfer.id));
     } catch (err) {
@@ -87,6 +91,7 @@ export function useSubmitDraft() {
 
 export function PayScreen() {
   const { items, status, error, load } = usePayees();
+  const { settings } = useSettings();
   const payeeId = usePayDraftStore((s) => s.payeeId);
   const reference = usePayDraftStore((s) => s.reference);
   const [adding, setAdding] = useState(false);
@@ -100,6 +105,15 @@ export function PayScreen() {
       </header>
       <main className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-y-auto px-[20px] pb-[12px] *:shrink-0">
         <AmountPad>
+        {/* With one account the line above the keypad already says where the money comes from. */}
+        {settings.accounts.length > 0 && (
+          <div className="flex flex-col gap-[8px]">
+            <label htmlFor="from" className="text-[13px] font-semibold text-muted">
+              From
+            </label>
+            <FromAccountSelect id="from" variant="bold" />
+          </div>
+        )}
         <div className="flex min-h-[64px] items-center gap-[12px] rounded-[20px] border-[2.5px] border-ink bg-white px-[12px] py-[10px] shadow-hard-sm">
           <Avatar
             initials={selected ? initials(selected.name) : "?"}

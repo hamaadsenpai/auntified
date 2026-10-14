@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { CheckIcon, ChevronDownIcon, SearchIcon } from "@/components/icons";
 import { FIELD_BASE, FIELD_VARIANTS, type SelectVariant } from "@/components/ui";
@@ -42,6 +43,7 @@ type CurrencyPickerProps = {
 export function CurrencyPicker({ id, variant = "bold", className }: CurrencyPickerProps) {
   const currency = useCurrency();
   const saveCurrency = useCurrencyStore((s) => s.saveCurrency);
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -80,7 +82,8 @@ export function CurrencyPicker({ id, variant = "bold", className }: CurrencyPick
   }
 
   function choose(c: Currency) {
-    void saveCurrency(c.code);
+    // Refresh re-reads the profile on the server, so the "currency not set" banner goes once it is saved.
+    void saveCurrency(c.code).then(() => router.refresh());
     close();
   }
 

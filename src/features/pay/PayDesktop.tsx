@@ -6,18 +6,18 @@ import { AuntieBao } from "@/components/mascot";
 import { Avatar, Button, Money, Tag } from "@/components/ui";
 import { LIMITS, ROUTES } from "@/constants";
 import { PayeeForm } from "@/features/payees/PayeeForm";
-import { usePayees, useSettings } from "@/store";
+import { usePayees } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
 import { cn } from "@/utils";
 import { AmountField } from "./AmountPad";
-import { FromAccountSelect } from "./FromAccountSelect";
+import { FromAccountSelect, useFromAccount } from "./FromAccountSelect";
 import { addPayeeToDraft, initials, isNewPayee, transfersLabel, useSubmitDraft } from "./PayScreen";
 
 const FIELD = "h-[52px] rounded-[14px] border-[1.5px] border-slate bg-white px-[14px] text-[16px] font-medium";
 
 export function PayDesktop() {
   const { items, status, error, load } = usePayees();
-  const { settings } = useSettings();
+  const from = useFromAccount();
   const { payeeId, amountSgd, reference } = usePayDraftStore();
   const [adding, setAdding] = useState(false);
   const draft = useSubmitDraft();
@@ -90,6 +90,7 @@ export function PayDesktop() {
           )}
           {adding ? (
             <PayeeForm
+              idPrefix="dpayee"
               submitLabel="Add payee"
               onSubmit={async (body) => {
                 await addPayeeToDraft(body);
@@ -159,7 +160,7 @@ export function PayDesktop() {
           <div className="flex justify-between gap-[12px] border-b border-line-strong py-[10px]">
             <dt className="text-[14px] font-medium text-muted">From</dt>
             <dd className="m-0 text-[14px] font-semibold">
-              {settings.accountName}, <Money sgd={settings.balanceSgd} />
+              {from.name}, <Money sgd={from.balanceSgd} />
             </dd>
           </div>
           <div className="flex justify-between gap-[12px] border-b border-line-strong py-[10px]">

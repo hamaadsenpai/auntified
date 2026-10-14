@@ -3,10 +3,11 @@
 import { useState, type ComponentType, type ReactNode } from "react";
 import { Avatar, Money, ProgressBar } from "@/components/ui";
 import { useSettings, useSettingsStore } from "@/store";
-import type { UpdateSettings } from "@/types/settings";
+import { LIMITS } from "@/constants";
+import type { Account, UpdateSettings } from "@/types/settings";
 import { cn } from "@/utils";
 import { errorMessage, SaveError } from "./SettingsControls";
-import { AccountNameForm, BalanceForm, SavingsGoalForm, TrustedContactForm } from "./SettingsForms";
+import { AccountNameForm, AddAccountForm, AddMoneyForm, BalanceForm, SavingsGoalForm, TrustedContactForm } from "./SettingsForms";
 
 type Variant = "mobile" | "desktop";
 type EditorForm = ComponentType<{ variant: "bold" | "soft"; onClose: () => void }>;
@@ -99,7 +100,9 @@ function Actions({ ready, editLabel, onEdit, onRemove, className }: ActionsProps
   );
 }
 
-function SimpleRow({ variant, label, value, Form }: { variant: Variant; label: string; value: ReactNode; Form: EditorForm }) {
+type SimpleRowProps = { variant: Variant; label: string; value: ReactNode; Form: EditorForm; editLabel?: string };
+
+function SimpleRow({ variant, label, value, Form, editLabel = "Edit" }: SimpleRowProps) {
   const { status } = useSettings();
   const editor = useEditor();
   const ready = status === "ready";
@@ -108,7 +111,7 @@ function SimpleRow({ variant, label, value, Form }: { variant: Variant; label: s
       variant={variant}
       label={label}
       value={ready ? value : "…"}
-      actions={<Actions ready={ready} editLabel="Edit" onEdit={editor.open} />}
+      actions={<Actions ready={ready} editLabel={editLabel} onEdit={editor.open} />}
       editing={editor.editing}
       form={<Form variant={variant === "mobile" ? "bold" : "soft"} onClose={editor.close} />}
       error={editor.error}
@@ -116,13 +119,45 @@ function SimpleRow({ variant, label, value, Form }: { variant: Variant; label: s
   );
 }
 
-/** Account name and balance, each with an inline editor. */
+/** An extra account: its name and balance, and Remove. The balance moves only by top-ups and transfers. */
+function ExtraAccountRow({ variant, account }: { variant: Variant; account: Account }) {
+  const { status } = useSettings();
+  const editor = useEditor();
+  const remove = () => void editor.remove({ removeAccountId: account.id }, `Remove ${account.name}? Its balance goes with it.`);
+  return (
+    <EditableRow
+      variant={variant}
+      label="Account"
+      value={account.name}
+      detail={<Money sgd={account.balanceSgd} />}
+      actions={
+        status === "ready" && (
+          <button type="button" onClick={remove} className={cn(ACTION, "text-brick")}>
+            Remove
+          </button>
+        )
+      }
+      editing={false}
+      form={null}
+      error={editor.error}
+    />
+  );
+}
+
+/** The main account's name and balance, any extra accounts, and add account / add money, each with an inline editor. */
 export function AccountRows({ variant }: { variant: Variant }) {
   const { settings } = useSettings();
   return (
     <>
       <SimpleRow variant={variant} label="Account name" value={settings.accountName} Form={AccountNameForm} />
       <SimpleRow variant={variant} label="Balance" value={<Money sgd={settings.balanceSgd} />} Form={BalanceForm} />
+      {settings.accounts.map((a) => (
+        <ExtraAccountRow key={a.id} variant={variant} account={a} />
+      ))}
+      {settings.accounts.length < LIMITS.ACCOUNTS && (
+        <SimpleRow variant={variant} label="Another account" value="Savings, joint or any other" Form={AddAccountForm} editLabel="Add" />
+      )}
+      <SimpleRow variant={variant} label="Add money" value="Top up or pay salary" Form={AddMoneyForm} editLabel="Add" />
     </>
   );
 }

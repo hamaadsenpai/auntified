@@ -10,7 +10,7 @@ export function Screen({ className, children }: ScreenProps) {
   return (
     <div
       className={cn(
-        "flex h-dvh flex-col overflow-hidden bg-white lg:mx-auto lg:my-12 lg:h-[844px] lg:w-[390px] lg:rounded-[28px] lg:border-[3px] lg:border-ink lg:shadow-hard-lg",
+        "flex h-[calc(100dvh-var(--banner-h,0px))] flex-col overflow-hidden bg-white lg:mx-auto lg:my-12 lg:h-[844px] lg:w-[390px] lg:rounded-[28px] lg:border-[3px] lg:border-ink lg:shadow-hard-lg",
         className,
       )}
     >

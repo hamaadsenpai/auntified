@@ -77,6 +77,12 @@ export function HistoryIcon({ size = 20, className }: IconProps) {
   );
 }
 
+export function PeopleIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={cn("text-teal", className)} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8"></path><path d="M18 14.2a6.5 6.5 0 0 1 3.5 5.8"></path></svg>
+  );
+}
+
 /** Google's "G" mark. Keeps the brand colors, so it ignores `currentColor`. */
 export function GoogleIcon({ size = 20, className }: IconProps) {
   return (

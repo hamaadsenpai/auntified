@@ -76,6 +76,8 @@ export async function runQuickCheck(uid: string, transferId: string, transcript:
   if (!held) throw ApiError.notFound("Transfer not found.");
   if (held.status !== "pending") throw notPending(held, "This transfer has already been checked.");
   const transfer = await buildTransferFacts(uid, held);
+  // Fail before the chat; saveCheckOutcome re-checks in its transaction.
+  if (transfer.amountSgd > transfer.availableSgd) throw new ApiError(409, "CONFLICT", "Not enough balance for this transfer.");
   const rules = scoreRules(transfer);
   const answered = transcript.filter((t) => t.role === "user").length;
   const lastTurn = answered >= MAX_QUESTIONS;

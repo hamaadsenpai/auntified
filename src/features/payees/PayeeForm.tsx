@@ -13,6 +13,8 @@ type PayeeFormProps = {
   /** Saves the payee. Throw ApiFailure["error"] to show its message. */
   onSubmit: (body: PayeeBody) => Promise<void>;
   onCancel?: () => void;
+  /** Prefixes the field ids, so two forms can share a page (mobile and desktop). */
+  idPrefix?: string;
 };
 
 const FIELDS = [
@@ -22,7 +24,7 @@ const FIELDS = [
 ] as const;
 
 /** Name, account and note for a payee. Used to add one on Pay and to edit one on the payee screen. */
-export function PayeeForm({ initial, submitLabel, onSubmit, onCancel }: PayeeFormProps) {
+export function PayeeForm({ initial, submitLabel, onSubmit, onCancel, idPrefix = "payee" }: PayeeFormProps) {
   const [values, setValues] = useState<PayeeBody>(initial ?? { name: "", account: "", note: "" });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,12 +46,12 @@ export function PayeeForm({ initial, submitLabel, onSubmit, onCancel }: PayeeFor
     <form onSubmit={handleSubmit} className="flex flex-col gap-[16px]">
       {FIELDS.map((f) => (
         <div key={f.key} className="flex flex-col gap-[8px]">
-          <label htmlFor={`payee-${f.key}`} className="text-[14px] font-semibold">
+          <label htmlFor={`${idPrefix}-${f.key}`} className="text-[14px] font-semibold">
             {f.label}
             {!f.required && <span className="font-medium text-muted"> (optional)</span>}
           </label>
           <Input
-            id={`payee-${f.key}`}
+            id={`${idPrefix}-${f.key}`}
             name={f.key}
             variant="soft"
             placeholder={f.placeholder}

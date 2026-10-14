@@ -1,15 +1,19 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { io } from "next/cache";
 import { FieldValue } from "firebase-admin/firestore";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { COLLECTIONS, DEFAULT_SETTINGS } from "@/constants";
+import { COLLECTIONS, DEFAULT_SETTINGS, LIMITS, SALARY_SGD } from "@/constants";
+import { ApiError } from "@/lib/api/errors";
 import { db } from "@/lib/firebase/admin";
 import type { AccountSettings, UpdateSettings } from "@/types/settings";
 import type { Preferences, UpdatePreferences, UserProfile } from "@/types/user";
+import { accountsFrom } from "./accounts.repository";
+import { seedFirstSalary } from "./credits.repository";
 
 const users = db.collection(COLLECTIONS.USERS);
 
-/** Creates `users/{uid}` on first sign-in and stamps `lastLoginAt` on every one after. */
+/** Creates `users/{uid}` on first sign-in (paid their first salary, so the balance isn't 0) and stamps `lastLoginAt` on every one after. */
 export async function upsertUserOnSignIn(token: DecodedIdToken) {
   const ref = users.doc(token.uid);
   await db.runTransaction(async (tx) => {
@@ -25,7 +29,9 @@ export async function upsertUserOnSignIn(token: DecodedIdToken) {
       provider: token.firebase.sign_in_provider,
       createdAt: FieldValue.serverTimestamp(),
       lastLoginAt: FieldValue.serverTimestamp(),
+      balanceSgd: SALARY_SGD,
     });
+    seedFirstSalary(tx, token.uid);
   });
 }
 
@@ -68,6 +74,7 @@ export async function getSettings(uid: string): Promise<AccountSettings> {
   return {
     accountName: pick("accountName"),
     balanceSgd: pick("balanceSgd"),
+    accounts: pick("accounts"),
     tone: pick("tone"),
     language: pick("language"),
     voiceReplies: pick("voiceReplies"),
@@ -76,9 +83,29 @@ export async function getSettings(uid: string): Promise<AccountSettings> {
   };
 }
 
-/** Replaces only the fields sent (null clears the contact or goal) and returns the full settings. */
-export async function updateSettings(uid: string, body: UpdateSettings): Promise<AccountSettings> {
-  // mergeFields swaps each sent field whole, so a new goal never keeps keys from the old one.
-  await users.doc(uid).set(body, { mergeFields: Object.keys(body) });
+/**
+ * Replaces only the fields sent (null clears the contact or goal) and returns the full settings.
+ * `addAccount` / `removeAccountId` change the extra accounts against what's stored. 409 when
+ * removing an account that has a held transfer, which could then never be sent.
+ */
+export async function updateSettings(uid: string, { addAccount, removeAccountId, ...fields }: UpdateSettings): Promise<AccountSettings> {
+  const ref = users.doc(uid);
+  await db.runTransaction(async (tx) => {
+    let accounts = accountsFrom((await tx.get(ref)).data()).slice(1);
+    if (removeAccountId) {
+      const held = await tx.get(
+        ref.collection(COLLECTIONS.TRANSFERS).where("fromAccountId", "==", removeAccountId).where("status", "==", "warned").limit(1),
+      );
+      if (!held.empty) throw new ApiError(409, "CONFLICT", "Send or cancel the held transfer from this account first.");
+      accounts = accounts.filter((a) => a.id !== removeAccountId);
+    }
+    if (addAccount) {
+      if (accounts.length >= LIMITS.ACCOUNTS) throw new ApiError(409, "CONFLICT", `You can have up to ${LIMITS.ACCOUNTS} extra accounts.`);
+      accounts = [...accounts, { id: randomUUID(), ...addAccount }];
+    }
+    const touched = addAccount || removeAccountId;
+    // mergeFields swaps each sent field whole, so a new goal never keeps keys from the old one.
+    tx.set(ref, { ...fields, ...(touched && { accounts }) }, { mergeFields: [...Object.keys(fields), ...(touched ? ["accounts"] : [])] });
+  });
   return getSettings(uid);
 }

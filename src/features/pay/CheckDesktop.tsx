@@ -7,12 +7,14 @@ import { AuntieBao } from "@/components/mascot";
 import { AuntieBubble, Button, Money, RiskMeter, UserBubble } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { VERDICT_CTA, useQuickCheck } from "./QuickCheckProvider";
+import { useDictation } from "./useDictation";
 
 const USER = "max-w-[400px] rounded-[20px_20px_4px_20px] px-[16px] py-[12px] text-[16px]";
 
 export function CheckDesktop() {
   const { transferId, transfer, nextHref, note, transcript, result, pending, error, answer, retry } = useQuickCheck();
   const [draft, setDraft] = useState("");
+  const dictation = useDictation((t) => setDraft((d) => (d ? `${d} ${t}` : t)));
   const firstAnswer = transcript.findIndex((t) => t.role === "user");
   const lastAuntie = transcript.findLastIndex((t) => t.role === "auntie");
   const done = result?.done ?? false;
@@ -166,7 +168,10 @@ export function CheckDesktop() {
               <button
                 type="button"
                 aria-label="Answer by voice"
-                className="flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-full border-[2.5px] border-teal bg-white px-[6px] py-[1px]"
+                aria-pressed={dictation.listening}
+                onClick={dictation.toggle}
+                disabled={!canAnswer || !dictation.supported}
+                className={`flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-full border-[2.5px] border-teal px-[6px] py-[1px] disabled:cursor-default disabled:opacity-50 ${dictation.listening ? "bg-mint" : "bg-white"}`}
               >
                 <MicIcon />
               </button>

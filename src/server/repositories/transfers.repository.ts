@@ -7,6 +7,8 @@ import { db } from "@/lib/firebase/admin";
 import { buildTransferFacts, scoreRules } from "@/server/check/transfer";
 import type { CheckResult } from "@/types/check";
 import type { CreateTransfer, Transfer, TransferAppeal, TransferStatus, UpdateTransfer } from "@/types/transfer";
+import { MAIN_ACCOUNT_ID } from "@/utils/accounts";
+import { readAccount } from "./accounts.repository";
 
 const STATUSES: TransferStatus[] = ["pending", "warned", "passed", "overridden", "blocked", "cancelled", "expired"];
 
@@ -56,6 +58,7 @@ function toTransfer(id: string, data: DocumentData): Transfer {
     payeeName: typeof data.payeeName === "string" ? data.payeeName : "",
     amountSgd: typeof data.amountSgd === "number" ? data.amountSgd : 0,
     reference: typeof data.reference === "string" ? data.reference : "",
+    fromAccountId: typeof data.fromAccountId === "string" ? data.fromAccountId : MAIN_ACCOUNT_ID,
     status: statusOf(data),
     flags: strings(data.flags),
     rulesScore: typeof data.rulesScore === "number" ? data.rulesScore : 0,
@@ -68,18 +71,27 @@ function toTransfer(id: string, data: DocumentData): Transfer {
   };
 }
 
+type PayingAccount = Awaited<ReturnType<typeof readAccount>>;
+
 /**
- * Sending debits the balance and counts the transfer on its payee, in the caller's transaction.
- * `payeeExists` must come from a read in that same transaction (reads go before writes).
+ * Sending debits the paying account and counts the transfer on its payee, in the caller's transaction.
+ * `from` and `payeeExists` must come from reads in that same transaction (reads go before writes).
  */
-function applySend(tx: Transaction, uid: string, t: Transfer, payeeExists: boolean) {
-  tx.set(userRef(uid), { balanceSgd: FieldValue.increment(-t.amountSgd) }, { merge: true });
+function applySend(tx: Transaction, uid: string, t: Transfer, from: PayingAccount, payeeExists: boolean) {
+  from.move(-t.amountSgd);
   if (payeeExists) {
     tx.update(userRef(uid).collection(COLLECTIONS.PAYEES).doc(t.payeeId), {
       transferCount: FieldValue.increment(1),
       totalSentSgd: FieldValue.increment(t.amountSgd),
     });
   }
+}
+
+/** The paying account; 409 if its balance can't cover the amount. Read in the sending transaction, before its writes. */
+async function ensureFunds(tx: Transaction, uid: string, t: Transfer) {
+  const from = await readAccount(tx, uid, t.fromAccountId);
+  if (t.amountSgd > from.balanceSgd) throw conflict(`Not enough balance in ${from.name} for this transfer.`);
+  return from;
 }
 
 const payeeExists = async (tx: Transaction, uid: string, payeeId: string) =>
@@ -109,6 +121,7 @@ export async function createTransfer(uid: string, body: CreateTransfer): Promise
     payeeName: facts.payeeName,
     amountSgd: body.amountSgd,
     reference: body.reference,
+    fromAccountId: body.fromAccountId,
     status: "pending",
     flags: rules.flags,
     rulesScore: rules.score,
@@ -140,7 +153,7 @@ export async function updateTransfer(uid: string, id: string, body: UpdateTransf
     const current = await getTransfer(uid, id);
     if (!current) throw ApiError.notFound("Transfer not found.");
     if (current.status !== "pending") throw notPending(current, "Only a pending transfer can be edited.");
-    const next = { payeeId: current.payeeId, amountSgd: current.amountSgd, reference: current.reference, ...details };
+    const next = { payeeId: current.payeeId, amountSgd: current.amountSgd, reference: current.reference, fromAccountId: current.fromAccountId, ...details };
     const facts = await buildTransferFacts(uid, next);
     const rules = scoreRules(facts);
     rescored = { ...next, payeeName: facts.payeeName, flags: rules.flags, rulesScore: rules.score };
@@ -160,6 +173,7 @@ export async function updateTransfer(uid: string, id: string, body: UpdateTransf
     if (appealReason !== undefined && current.status !== "blocked") throw conflict("Only a blocked transfer can be appealed.");
     if (appealReason !== undefined && current.appeal) throw conflict("This block has already been appealed.");
 
+    const from = status === "overridden" ? await ensureFunds(tx, uid, current) : null;
     const payeeFound = status === "overridden" && (await payeeExists(tx, uid, current.payeeId));
     const now = Timestamp.now();
     const changes = {
@@ -170,7 +184,7 @@ export async function updateTransfer(uid: string, id: string, body: UpdateTransf
     };
     const updated = toTransfer(id, { ...snap.data(), ...changes });
     tx.update(ref, changes);
-    if (status === "overridden") applySend(tx, uid, updated, payeeFound);
+    if (from) applySend(tx, uid, updated, from, payeeFound);
     return updated;
   });
 }
@@ -198,6 +212,7 @@ export async function saveCheckOutcome(uid: string, id: string, result: CheckRes
     if (current.status !== "pending") throw notPending(current, "This transfer has already been checked.");
 
     const status = OUTCOME[result.verdict];
+    const from = status === "passed" ? await ensureFunds(tx, uid, current) : null;
     const payeeFound = status === "passed" && (await payeeExists(tx, uid, current.payeeId));
     const changes = {
       status,
@@ -210,7 +225,7 @@ export async function saveCheckOutcome(uid: string, id: string, result: CheckRes
     };
     const updated = toTransfer(id, { ...snap.data(), ...changes });
     tx.update(ref, changes);
-    if (status === "passed") applySend(tx, uid, updated, payeeFound);
+    if (from) applySend(tx, uid, updated, from, payeeFound);
     return updated;
   });
 }

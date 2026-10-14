@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ChevronRightIcon } from "@/components/icons";
 import { BottomNav, Screen } from "@/components/layout";
 import { ROUTES } from "@/constants";
+import { publicEnv } from "@/lib/env.client";
 import { AccountDetails, AccountFallback } from "./Account";
 import { CurrencyPicker } from "./CurrencyPicker";
 import { LogoutButton } from "./LogoutButton";
@@ -37,6 +38,15 @@ export function SettingsScreen() {
             <span className="text-[16px] font-semibold">Your patterns</span>
             <ChevronRightIcon />
           </Link>
+          {publicEnv.DEMO_MODE && (
+            <Link
+              href={ROUTES.DEMO}
+              className="flex min-h-[60px] items-center justify-between gap-[12px] border-b border-line text-night no-underline"
+            >
+              <span className="text-[16px] font-semibold">Demo controls</span>
+              <ChevronRightIcon />
+            </Link>
+          )}
           <AccountRows variant="mobile" />
           <div className="flex min-h-[72px] items-center justify-between gap-[12px] border-b border-line py-[8px]">
             <Suspense fallback={<AccountFallback />}>

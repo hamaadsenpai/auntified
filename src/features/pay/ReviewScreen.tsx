@@ -10,6 +10,7 @@ import { ROUTES, withTransfer } from "@/constants";
 import { usePayees, useSettings, useTransfers, useTransfersStore } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
 import type { ApiFailure } from "@/types/api";
+import { accountOf } from "@/utils/accounts";
 import { initials, isNewPayee, transfersLabel } from "./PayScreen";
 
 export function ReviewScreen() {
@@ -77,6 +78,7 @@ export function ReviewScreen() {
     );
   }
 
+  const from = accountOf(settings, transfer.fromAccountId);
   return (
     <Screen className="lg:hidden">
       <BackHeader backHref={ROUTES.PAY} title="Review transfer" />
@@ -109,7 +111,7 @@ export function ReviewScreen() {
           <div className="flex justify-between gap-[12px] border-b border-line py-[12px]">
             <dt className="text-[14px] font-medium text-muted">From</dt>
             <dd className="m-0 flex flex-col gap-[2px] text-right text-[14px] font-semibold">
-              {settings.accountName}<span className="text-[13px] font-medium text-muted"><Money sgd={settings.balanceSgd} /> available</span>
+              {from.name}<span className="text-[13px] font-medium text-muted"><Money sgd={from.balanceSgd} /> available</span>
             </dd>
           </div>
           <div className="flex justify-between gap-[12px] border-b border-line py-[12px]">

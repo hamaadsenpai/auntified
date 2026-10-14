@@ -9,6 +9,8 @@ import { NAV_ITEMS, type NavKey } from "./navItems";
 
 function activeKey(pathname: string): NavKey | null {
   if (pathname.startsWith("/home") || pathname.startsWith("/roast") || pathname.startsWith("/ask")) return "home";
+  // Before "/pay": "/payees" starts with it too.
+  if (pathname.startsWith("/payees")) return "payees";
   if (pathname.startsWith("/pay")) return "pay";
   if (pathname.startsWith("/ledger")) return "ledger";
   if (pathname.startsWith("/settings") || pathname.startsWith("/patterns") || pathname.startsWith("/demo")) return "settings";

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Screen } from "@/components/layout";
 import { ROUTES } from "@/constants";
 import { useTransfers, useTransfersStore } from "@/store";
+import { VerdictDesktop } from "./VerdictDesktop";
 
 const DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
 const TIME = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
@@ -40,20 +41,24 @@ export function useTransferParam() {
 
 /** Shown while the transfer loads, or when the link has no transfer behind it. */
 export function TransferFallback({ missing }: { missing: boolean }) {
+  const body = missing ? (
+    <>
+      <p className="m-0 font-display text-[18px] font-bold">We could not find this payment.</p>
+      <Link href={ROUTES.HOME} className="text-[15px] font-semibold text-teal">
+        Back to home
+      </Link>
+    </>
+  ) : (
+    <p className="m-0 text-[14px] font-medium text-muted">Loading…</p>
+  );
   return (
-    <Screen>
-      <main className="flex flex-1 flex-col items-center justify-center gap-[12px] px-[20px] text-center">
-        {missing ? (
-          <>
-            <p className="m-0 font-display text-[18px] font-bold">We could not find this payment.</p>
-            <Link href={ROUTES.HOME} className="text-[15px] font-semibold text-teal">
-              Back to home
-            </Link>
-          </>
-        ) : (
-          <p className="m-0 text-[14px] font-medium text-muted">Loading…</p>
-        )}
-      </main>
-    </Screen>
+    <>
+      <VerdictDesktop>
+        <div className="flex flex-1 flex-col items-center justify-center gap-[12px] text-center">{body}</div>
+      </VerdictDesktop>
+      <Screen className="lg:hidden">
+        <main className="flex flex-1 flex-col items-center justify-center gap-[12px] px-[20px] text-center">{body}</main>
+      </Screen>
+    </>
   );
 }

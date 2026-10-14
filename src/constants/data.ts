@@ -14,6 +14,7 @@ export const EXPENSE_CATEGORIES = [
 export const DEFAULT_SETTINGS: AccountSettings = {
   accountName: "Everyday Account",
   balanceSgd: 0,
+  accounts: [],
   tone: "roast",
   language: "Singlish",
   voiceReplies: true,
@@ -21,10 +22,15 @@ export const DEFAULT_SETTINGS: AccountSettings = {
   savingsGoal: null,
 };
 
+/** The simulated monthly salary: a new user's first credit, and the Settings "Pay salary" amount. */
+export const SALARY_SGD = 3500;
+
 /** Validation limits shared by the forms and the zod schemas. */
 export const LIMITS = {
   NAME: 60,
   ACCOUNT: 40,
+  /** Extra accounts beside the main one. */
+  ACCOUNTS: 5,
   NOTE: 40,
   REFERENCE: 140,
   APPEAL: 500,

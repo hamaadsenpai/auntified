@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import { useBillsStore } from "./bills.store";
+import { useCreditsStore } from "./credits.store";
 import { useExpensesStore } from "./expenses.store";
 import { usePayeesStore } from "./payees.store";
 import { useSettingsStore } from "./settings.store";
@@ -28,5 +30,17 @@ export function useExpenses() {
 export function useSettings() {
   const state = useSettingsStore();
   useEffect(() => void useSettingsStore.getState().load(), []);
+  return state;
+}
+
+export function useBills() {
+  const state = useBillsStore();
+  useEffect(() => void useBillsStore.getState().load(), []);
+  return state;
+}
+
+export function useCredits() {
+  const state = useCreditsStore();
+  useEffect(() => void useCreditsStore.getState().load(), []);
   return state;
 }

@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import type { TagVariant } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { useExpenses, useTransfers, useTransfersStore } from "@/store";
+import { useCredits, useExpenses, useTransfers, useTransfersStore } from "@/store";
 import type { ApiFailure } from "@/types/api";
+import type { Credit } from "@/types/credit";
 import type { Expense } from "@/types/expense";
 import type { Transfer } from "@/types/transfer";
 import { expenseWeeks, formatRange, STATUS_TAG, sumSgd } from "./history";
 
-export const FILTERS = ["Payments", "Roasts", "Blocks"] as const;
+export const FILTERS = ["Payments", "Roasts", "Blocks", "Credits"] as const;
 
 export type Filter = "All" | (typeof FILTERS)[number];
 
@@ -17,6 +18,8 @@ export type Entry = {
   key: string;
   /** Set on payment rows only: the transfer to delete. */
   transfer?: Transfer;
+  /** Set on credit rows only. */
+  credit?: Credit;
   at: string;
   title: string;
   amount: number;
@@ -27,8 +30,8 @@ export type Entry = {
   href?: string;
 };
 
-/** Every transfer plus one "Weekly roast" per week with expenses, newest first. */
-function buildEntries(transfers: Transfer[], expenses: Expense[]): Entry[] {
+/** Every transfer and credit plus one "Weekly roast" per week with expenses, newest first. */
+function buildEntries(transfers: Transfer[], expenses: Expense[], credits: Credit[]): Entry[] {
   const payments: Entry[] = transfers.map((t) => ({
     key: `t-${t.id}`,
     transfer: t,
@@ -49,13 +52,24 @@ function buildEntries(transfers: Transfer[], expenses: Expense[]): Entry[] {
     label: "Roast",
     href: ROUTES.ROAST,
   }));
-  return [...payments, ...roasts].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  const deposits: Entry[] = credits.map((c) => ({
+    key: `c-${c.id}`,
+    credit: c,
+    at: c.createdAt,
+    title: c.kind === "salary" ? "Salary" : "Top-up",
+    amount: c.amountSgd,
+    suffix: " in",
+    tag: "passed",
+    label: "Credit",
+  }));
+  return [...payments, ...roasts, ...deposits].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 }
 
 function matches(e: Entry, filter: Filter) {
   if (filter === "Payments") return !!e.transfer;
-  if (filter === "Roasts") return !e.transfer;
+  if (filter === "Roasts") return !e.transfer && !e.credit;
   if (filter === "Blocks") return e.transfer?.status === "blocked";
+  if (filter === "Credits") return !!e.credit;
   return true;
 }
 
@@ -63,11 +77,12 @@ function matches(e: Entry, filter: Filter) {
 export function useLedger() {
   const transfers = useTransfers();
   const expenses = useExpenses();
+  const credits = useCredits();
   const [filter, setFilter] = useState<Filter>("All");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const all = useMemo(() => buildEntries(transfers.items, expenses.items), [transfers.items, expenses.items]);
+  const all = useMemo(() => buildEntries(transfers.items, expenses.items, credits.items), [transfers.items, expenses.items, credits.items]);
   const entries = useMemo(() => all.filter((e) => matches(e, filter)), [all, filter]);
 
   const summary = useMemo(() => {
@@ -87,15 +102,16 @@ export function useLedger() {
   }, [transfers.items, expenses.items, all]);
 
   const status: "loading" | "ready" | "error" =
-    transfers.status === "error" || expenses.status === "error"
+    transfers.status === "error" || expenses.status === "error" || credits.status === "error"
       ? "error"
-      : transfers.status === "ready" && expenses.status === "ready"
+      : transfers.status === "ready" && expenses.status === "ready" && credits.status === "ready"
         ? "ready"
         : "loading";
 
   const retry = () => {
     if (transfers.status === "error") void transfers.load(true);
     if (expenses.status === "error") void expenses.load(true);
+    if (credits.status === "error") void credits.load(true);
   };
 
   const remove = async (t: Transfer) => {
@@ -116,7 +132,7 @@ export function useLedger() {
     hasAny: all.length > 0,
     summary,
     status,
-    error: transfers.error ?? expenses.error,
+    error: transfers.error ?? expenses.error ?? credits.error,
     retry,
     filter,
     setFilter,

@@ -9,6 +9,7 @@ const schema = z
     payeeId: z.string().min(1).max(128),
     amountSgd: z.number().positive().max(LIMITS.MAX_AMOUNT_SGD),
     reference: z.string().trim().max(LIMITS.REFERENCE),
+    fromAccountId: z.string().min(1).max(64),
     status: z.enum(["cancelled", "overridden"]),
     appealReason: z.string().trim().min(1).max(LIMITS.APPEAL),
   })

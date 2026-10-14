@@ -4,5 +4,7 @@ export { usePayeesStore } from "./payees.store";
 export { useTransfersStore } from "./transfers.store";
 export { useExpensesStore } from "./expenses.store";
 export { useSettingsStore } from "./settings.store";
-export { usePayees, useTransfers, useExpenses, useSettings } from "./data-hooks";
+export { useBillsStore } from "./bills.store";
+export { useCreditsStore } from "./credits.store";
+export { usePayees, useTransfers, useExpenses, useSettings, useBills, useCredits } from "./data-hooks";
 export type { LoadStatus } from "./collection";

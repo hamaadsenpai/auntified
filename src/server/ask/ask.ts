@@ -12,6 +12,7 @@ import type { Expense } from "@/types/expense";
 import type { Payee } from "@/types/payee";
 import type { AccountSettings } from "@/types/settings";
 import type { Transfer } from "@/types/transfer";
+import { accountsOf } from "@/utils/accounts";
 import { formatMoney } from "@/utils/format";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -109,7 +110,7 @@ function describe(
 
   return [
     `Account data (today is ${day(new Date(now).toISOString())}; amounts in ${currency.name}):`,
-    `Balance in ${settings.accountName}: ${money(settings.balanceSgd)}.`,
+    ...accountsOf(settings).map((a) => `Balance in ${a.name}: ${money(a.balanceSgd)}.`),
     goal
       ? `Savings goal: ${money(goal.savedSgd)} saved of ${money(goal.targetSgd)}, deadline ${goal.deadline}.`
       : "Savings goal: none set.",

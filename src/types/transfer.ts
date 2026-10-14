@@ -16,6 +16,8 @@ export type Transfer = {
   payeeName: string;
   amountSgd: number;
   reference: string;
+  /** The account that pays ("main" for transfers made before there were several). */
+  fromAccountId: string;
   status: TransferStatus;
   /** Rule flags and their score, worked out when the transfer is created or edited. */
   flags: string[];
@@ -31,7 +33,7 @@ export type Transfer = {
 };
 
 /** Body of POST /api/transfers. */
-export type CreateTransfer = { payeeId: string; amountSgd: number; reference: string };
+export type CreateTransfer = { payeeId: string; amountSgd: number; reference: string; fromAccountId: string };
 
 /**
  * Body of PATCH /api/transfers/[id]. Details can change only while pending.
@@ -42,6 +44,7 @@ export type UpdateTransfer = Partial<{
   payeeId: string;
   amountSgd: number;
   reference: string;
+  fromAccountId: string;
   status: "cancelled" | "overridden";
   appealReason: string;
 }>;

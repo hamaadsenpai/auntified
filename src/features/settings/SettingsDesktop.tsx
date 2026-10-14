@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronRightIcon } from "@/components/icons";
 import { ROUTES } from "@/constants";
+import { publicEnv } from "@/lib/env.client";
 import { AccountDetails, AccountFallback } from "./Account";
 import { CurrencyPicker } from "./CurrencyPicker";
 import { LogoutButton } from "./LogoutButton";
@@ -63,6 +64,15 @@ export function SettingsDesktop() {
               Your patterns
               <ChevronRightIcon />
             </Link>
+            {publicEnv.DEMO_MODE && (
+              <Link
+                href={ROUTES.DEMO}
+                className="flex min-h-[48px] items-center justify-between gap-[12px] border-t border-line text-[15px] font-semibold text-night no-underline"
+              >
+                Demo controls
+                <ChevronRightIcon />
+              </Link>
+            )}
           </section>
         </div>
       </div>

@@ -24,7 +24,7 @@ export async function generate(params: Omit<GenerateContentParameters, "model">)
       return await gemini.models.generateContent({ ...params, model });
     } catch (err) {
       lastErr = err;
-      if (!isTransient(err)) break;
+      if (!isTransient(err) || model === MODELS.at(-1)) break;
       console.warn(`[gemini] ${model} unavailable, trying next model`);
     }
   }

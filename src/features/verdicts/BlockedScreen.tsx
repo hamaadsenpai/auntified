@@ -11,6 +11,7 @@ import type { ApiFailure } from "@/types/api";
 import type { Transfer } from "@/types/transfer";
 import { cn } from "@/utils";
 import { formatWhen, TransferFallback, useTransferParam } from "./transfer-param";
+import { PANEL, VerdictDesktop } from "./VerdictDesktop";
 
 const initials = (name: string) =>
   name
@@ -22,97 +23,159 @@ const initials = (name: string) =>
 
 export function BlockedScreen() {
   const { transfer, missing } = useTransferParam();
-  const contact = useSettings().settings.trustedContact;
 
   if (!transfer) return <TransferFallback missing={missing} />;
 
   const [headline, ...otherReasons] = transfer.reasons;
 
   return (
-    <Screen>
-      <header role="alert" className="flex flex-none flex-col gap-[8px] bg-brick px-[20px] pt-[24px] pb-[22px] text-white">
-        <div className="flex items-baseline justify-between gap-[12px]">
-          <span className="text-[12px] font-bold tracking-[.08em] uppercase">Payment stopped</span>
-          {transfer.score !== null && <span className="text-[13px] font-semibold">Score {transfer.score}/100</span>}
-        </div>
-        <div className="flex items-center gap-[12px]">
-          <h1 className="m-0 flex-1 font-display text-[26px] leading-[1.12] font-bold text-pretty">
-            I stopped <Money sgd={transfer.amountSgd} /> to {transfer.payeeName}.
-          </h1>
-          <span className="flex rounded-[20px] border-[2.5px] border-ink bg-cream p-[4px]">
-            <AuntieBao mood="alarm" width={72} height={67} />
-          </span>
-        </div>
-        <p className="m-0 font-display text-[15px] leading-[1.4] font-medium">{headline ?? "That is how scams look."}</p>
-      </header>
-      <main className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-y-auto px-[20px] pt-[18px] pb-[20px] *:shrink-0">
-        {(transfer.flags.length > 0 || otherReasons.length > 0) && (
-          <div className="flex flex-col gap-[6px] rounded-[16px] border-[1.5px] border-brick px-[14px] py-[12px]">
-            <span className="text-[12px] font-medium text-muted">What she spotted</span>
-            {transfer.flags.length > 0 && (
-              <span className="flex flex-wrap gap-[6px]">
-                {transfer.flags.map((flag) => (
-                  <span key={flag} className="rounded-full bg-brick px-[11px] py-[5px] text-[14px] font-bold text-white">
-                    {flag}
-                  </span>
-                ))}
+    <>
+      <BlockedDesktop transfer={transfer} headline={headline} otherReasons={otherReasons} />
+      <Screen className="lg:hidden">
+        <header role="alert" className="flex flex-none flex-col gap-[8px] bg-brick px-[20px] pt-[24px] pb-[22px] text-white">
+          <div className="flex items-baseline justify-between gap-[12px]">
+            <span className="text-[12px] font-bold tracking-[.08em] uppercase">Payment stopped</span>
+            {transfer.score !== null && <span className="text-[13px] font-semibold">Score {transfer.score}/100</span>}
+          </div>
+          <div className="flex items-center gap-[12px]">
+            <h1 className="m-0 flex-1 font-display text-[26px] leading-[1.12] font-bold text-pretty">
+              I stopped <Money sgd={transfer.amountSgd} /> to {transfer.payeeName}.
+            </h1>
+            <span className="flex rounded-[20px] border-[2.5px] border-ink bg-cream p-[4px]">
+              <AuntieBao mood="alarm" width={72} height={67} />
+            </span>
+          </div>
+          <p className="m-0 font-display text-[15px] leading-[1.4] font-medium">{headline ?? "That is how scams look."}</p>
+        </header>
+        <main className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-y-auto px-[20px] pt-[18px] pb-[20px] *:shrink-0">
+          <Spotted transfer={transfer} otherReasons={otherReasons} className="rounded-[16px] border-[1.5px] border-brick px-[14px] py-[12px]" />
+          <ContactCard className="flex flex-col gap-[12px] rounded-[22px] px-[16px] py-[14px]" />
+          <Appeal id="appeal" transfer={transfer} />
+          <Link
+            href={withTransfer(ROUTES.PAY_BLOCKED_WHY, transfer.id)}
+            className="flex min-h-[44px] items-center justify-center text-[15px] font-semibold text-teal"
+          >
+            See how she scored it
+          </Link>
+          <Link href={ROUTES.HOME} className="flex min-h-[44px] items-center justify-center text-[15px] font-semibold text-teal">
+            Back to home
+          </Link>
+          <p className="m-0 mt-auto text-center text-[12px] leading-[1.4] font-medium text-muted">{DISCLAIMER}</p>
+        </main>
+      </Screen>
+    </>
+  );
+}
+
+const DISCLAIMER = "Auntified is an assistant, not a financial adviser.";
+
+function BlockedDesktop({ transfer, headline, otherReasons }: { transfer: Transfer; headline?: string; otherReasons: string[] }) {
+  return (
+    <VerdictDesktop
+      back={{ href: ROUTES.HOME, label: "Back to home" }}
+      kicker="Payment stopped"
+      title={<>I stopped <Money sgd={transfer.amountSgd} /> to {transfer.payeeName}.</>}
+    >
+      <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-start gap-[24px]">
+        <div className="flex flex-col gap-[24px]">
+          <div role="alert" className={`${PANEL} gap-[14px] bg-brick text-white`}>
+            <div className="flex items-center gap-[16px]">
+              <span className="flex flex-none rounded-[20px] border-[2.5px] border-ink bg-cream p-[4px]">
+                <AuntieBao mood="alarm" width={96} height={89} />
+              </span>
+              <p className="m-0 flex-1 font-display text-[20px] leading-[1.4] font-medium">{headline ?? "That is how scams look."}</p>
+            </div>
+            {transfer.score !== null && (
+              <span className="flex items-baseline gap-[4px] border-t border-white/30 pt-[12px]">
+                <span className="text-[13px] font-semibold">Score</span>
+                <span className="font-display text-[32px] leading-none font-bold">{transfer.score}</span>
+                <span className="text-[14px] font-semibold">/100</span>
               </span>
             )}
-            {otherReasons.map((reason) => (
-              <span key={reason} className="text-[13px] font-medium text-muted">
-                {reason}
-              </span>
-            ))}
           </div>
-        )}
-        <Card className="flex flex-col gap-[12px] rounded-[22px] px-[16px] py-[14px]">
-          {contact ? (
-            <>
-              <div className="flex items-center gap-[12px]">
-                <Avatar initials={initials(contact.name)} size={44} as="div" className="flex-none bg-mint text-[15px]" />
-                <div className="flex flex-col gap-[2px]">
-                  <span className="text-[12px] font-medium text-muted">Trusted contact</span>
-                  <span className="text-[16px] font-semibold">
-                    {contact.name}
-                    {contact.relation && `, ${contact.relation}`}
-                  </span>
-                  <span className="text-[13px] font-medium text-muted">{contact.phone}</span>
-                </div>
-              </div>
-              <Button href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}>Call {contact.name}</Button>
-            </>
-          ) : (
+          <Spotted transfer={transfer} otherReasons={otherReasons} className={`${PANEL} gap-[8px]`} />
+          <Link
+            href={withTransfer(ROUTES.PAY_BLOCKED_WHY, transfer.id)}
+            className="flex min-h-[44px] items-center self-start text-[15px] font-semibold text-teal"
+          >
+            See how she scored it
+          </Link>
+        </div>
+        <div className="flex flex-col gap-[24px]">
+          <ContactCard className={`${PANEL} gap-[14px]`} />
+          <section aria-labelledby="dappeal-h" className={`${PANEL} gap-[12px]`}>
+            <h2 id="dappeal-h" className="m-0 font-display text-[17px] font-bold">
+              Think it&apos;s safe?
+            </h2>
+            <Appeal id="dappeal" transfer={transfer} />
+          </section>
+        </div>
+      </div>
+      <p className="m-0 mt-auto text-[12px] leading-[1.4] font-medium text-muted">{DISCLAIMER}</p>
+    </VerdictDesktop>
+  );
+}
+
+/** The flags and lesser reasons behind the block. Nothing when there are none. */
+function Spotted({ transfer, otherReasons, className }: { transfer: Transfer; otherReasons: string[]; className: string }) {
+  if (transfer.flags.length === 0 && otherReasons.length === 0) return null;
+  return (
+    <div className={cn("flex flex-col gap-[6px]", className)}>
+      <span className="text-[12px] font-medium text-muted">What she spotted</span>
+      {transfer.flags.length > 0 && (
+        <span className="flex flex-wrap gap-[6px]">
+          {transfer.flags.map((flag) => (
+            <span key={flag} className="rounded-full bg-brick px-[11px] py-[5px] text-[14px] font-bold text-white">
+              {flag}
+            </span>
+          ))}
+        </span>
+      )}
+      {otherReasons.map((reason) => (
+        <span key={reason} className="text-[13px] font-medium text-muted">
+          {reason}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ContactCard({ className }: { className: string }) {
+  const contact = useSettings().settings.trustedContact;
+  return (
+    <Card className={className}>
+      {contact ? (
+        <>
+          <div className="flex items-center gap-[12px]">
+            <Avatar initials={initials(contact.name)} size={44} as="div" className="flex-none bg-mint text-[15px]" />
             <div className="flex flex-col gap-[2px]">
               <span className="text-[12px] font-medium text-muted">Trusted contact</span>
-              <span className="text-[15px] font-medium">
-                None yet.{" "}
-                <Link href={ROUTES.SETTINGS} className="font-semibold text-teal">
-                  Add one in Settings
-                </Link>
+              <span className="text-[16px] font-semibold">
+                {contact.name}
+                {contact.relation && `, ${contact.relation}`}
               </span>
+              <span className="text-[13px] font-medium text-muted">{contact.phone}</span>
             </div>
-          )}
-        </Card>
-        <Appeal transfer={transfer} />
-        <Link
-          href={withTransfer(ROUTES.PAY_BLOCKED_WHY, transfer.id)}
-          className="flex min-h-[44px] items-center justify-center text-[15px] font-semibold text-teal"
-        >
-          See how she scored it
-        </Link>
-        <Link href={ROUTES.HOME} className="flex min-h-[44px] items-center justify-center text-[15px] font-semibold text-teal">
-          Back to home
-        </Link>
-        <p className="m-0 mt-auto text-center text-[12px] leading-[1.4] font-medium text-muted">
-          Auntified is an assistant, not a financial adviser.
-        </p>
-      </main>
-    </Screen>
+          </div>
+          <Button href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}>Call {contact.name}</Button>
+        </>
+      ) : (
+        <div className="flex flex-col gap-[2px]">
+          <span className="text-[12px] font-medium text-muted">Trusted contact</span>
+          <span className="text-[15px] font-medium">
+            None yet.{" "}
+            <Link href={ROUTES.SETTINGS} className="font-semibold text-teal">
+              Add one in Settings
+            </Link>
+          </span>
+        </div>
+      )}
+    </Card>
   );
 }
 
 /** Records the user's case against the block. The block stays and nothing is sent. */
-function Appeal({ transfer }: { transfer: Transfer }) {
+function Appeal({ id, transfer }: { id: string; transfer: Transfer }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [pending, setPending] = useState(false);
@@ -153,11 +216,11 @@ function Appeal({ transfer }: { transfer: Transfer }) {
 
   return (
     <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-[10px]">
-      <label htmlFor="appeal" className="text-[14px] font-semibold">
+      <label htmlFor={id} className="text-[14px] font-semibold">
         Why is this payment safe?
       </label>
       <textarea
-        id="appeal"
+        id={id}
         rows={4}
         maxLength={LIMITS.APPEAL}
         placeholder="Who they are, how you know them and what it's for"

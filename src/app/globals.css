@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Full-height screens subtract this; set while the currency banner shows (CurrencyBanner). */
+:root:has([data-currency-banner]) {
+  --banner-h: 44px;
+}
+
 @theme {
   --color-teal: #287a74;
   --color-teal-dark: #1e5f5a;

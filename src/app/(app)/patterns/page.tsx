@@ -1,5 +1,10 @@
-import { PatternsScreen } from "@/features/patterns";
+import { PatternsDesktop, PatternsScreen } from "@/features/patterns";
 
 export default function Page() {
-  return <PatternsScreen />;
+  return (
+    <>
+      <PatternsDesktop />
+      <PatternsScreen />
+    </>
+  );
 }

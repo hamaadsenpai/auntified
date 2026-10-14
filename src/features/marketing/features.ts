@@ -5,7 +5,7 @@ export type MarketingFeature = {
   title: string;
   summary: string;
   points: string[];
-  href: string;
+  href?: string;
 };
 
 export const MARKETING_FEATURES: MarketingFeature[] = [
@@ -14,14 +14,14 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
     title: "Scam check before you pay",
     summary: "Auntie asks a few questions before a risky transfer leaves your account.",
     points: ["Who is this payee to you?", "Were you told to pay today?", "Auntie never asks for your PIN, password or OTP."],
-    href: ROUTES.PAY_CHECK,
+    href: ROUTES.PAY,
   },
   {
     key: "verdicts",
     title: "Warn or block",
     summary: "Each transfer gets a risk score. Unusual ones get a warning, scams get blocked.",
     points: ["Warnings for odd timing, like paying after 10pm", "Blocks on payees that look like scams", "A plain score explainer for every verdict"],
-    href: ROUTES.PAY_BLOCKED_WHY,
+    href: ROUTES.PAY,
   },
   {
     key: "roast",
@@ -63,6 +63,5 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
     title: "Bank plug-in",
     summary: "Banks can call Auntie before a transfer through a pre authorisation webhook.",
     points: ["One webhook, v1", "Pass, warn or block response", "Falls back to the bank's own rules on timeout"],
-    href: ROUTES.PLUGIN,
   },
 ];

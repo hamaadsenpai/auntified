@@ -1,11 +1,13 @@
 "use client";
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
-import { Button, Input, type SelectVariant } from "@/components/ui";
-import { LIMITS } from "@/constants";
+import { Button, Input, Money, Select, type SelectVariant } from "@/components/ui";
+import { LIMITS, SALARY_SGD } from "@/constants";
 import type { Currency } from "@/constants/currencies";
-import { useCurrency, useSettingsStore } from "@/store";
+import { useCreditsStore, useCurrency, useSettingsStore } from "@/store";
+import type { CreateCredit } from "@/types/credit";
 import type { UpdateSettings } from "@/types/settings";
+import { accountsOf, MAIN_ACCOUNT_ID } from "@/utils/accounts";
 import { convertFromSgd } from "@/utils/format";
 import { errorMessage } from "./SettingsControls";
 
@@ -29,16 +31,16 @@ function fromSgd(sgd: number, currency: Currency) {
   return String(convertFromSgd(sgd, currency));
 }
 
-/** Saves through the settings store and keeps the error for the form's alert. */
+/** Saves through the settings store (or runs any other action) and keeps the error for the form's alert. */
 function useSettingsForm(onClose: () => void) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit(body: UpdateSettings) {
+  async function run(action: () => Promise<unknown>) {
     setPending(true);
     setError(null);
     try {
-      await useSettingsStore.getState().save(body);
+      await action();
       onClose();
     } catch (err) {
       setError(errorMessage(err));
@@ -46,7 +48,8 @@ function useSettingsForm(onClose: () => void) {
     }
   }
 
-  return { pending, error, setError, submit };
+  const submit = (body: UpdateSettings) => run(() => useSettingsStore.getState().save(body));
+  return { pending, error, setError, submit, run };
 }
 
 function Field({ id, label, optional, children }: { id: string; label: string; optional?: boolean; children: ReactNode }) {
@@ -66,12 +69,14 @@ function FormShell({
   onClose,
   pending,
   error,
+  submitLabel = "Save",
   children,
 }: {
   onSubmit: () => void;
   onClose: () => void;
   pending: boolean;
   error: string | null;
+  submitLabel?: string;
   children: ReactNode;
 }) {
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -92,7 +97,7 @@ function FormShell({
           Cancel
         </Button>
         <Button type="submit" className="flex-1 disabled:opacity-60" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? "Saving…" : submitLabel}
         </Button>
       </div>
     </form>
@@ -140,6 +145,93 @@ export function BalanceForm({ variant, onClose }: FormProps) {
           onChange={(e) => setBalance(e.target.value)}
         />
       </Field>
+    </FormShell>
+  );
+}
+
+/** Opens an extra account with a name and an opening balance. */
+export function AddAccountForm({ variant, onClose }: FormProps) {
+  const id = useId();
+  const currency = useCurrency();
+  const [name, setName] = useState("");
+  const [balance, setBalance] = useState("0");
+  const { pending, error, setError, submit } = useSettingsForm(onClose);
+
+  function save() {
+    const balanceSgd = toSgd(balance, currency);
+    if (!name.trim()) return setError("Enter a name for the account.");
+    if (balanceSgd === null) return setError("Enter a balance of 0 or more.");
+    void submit({ addAccount: { name: name.trim(), balanceSgd } });
+  }
+
+  return (
+    <FormShell onSubmit={save} onClose={onClose} pending={pending} error={error} submitLabel="Add account">
+      <Field id={id} label="Account name">
+        <Input id={id} variant={variant} required maxLength={LIMITS.NAME} placeholder="e.g. Savings" value={name} onChange={(e) => setName(e.target.value)} />
+      </Field>
+      <Field id={`${id}-balance`} label={`Opening balance (${currency.code})`}>
+        <Input
+          id={`${id}-balance`}
+          variant={variant}
+          type="number"
+          inputMode="decimal"
+          required
+          min={0}
+          step={currency.decimals ? 0.01 : 1}
+          value={balance}
+          onChange={(e) => setBalance(e.target.value)}
+        />
+      </Field>
+    </FormShell>
+  );
+}
+
+/** Credits a demo account: a typed top-up, or one simulated salary. */
+export function AddMoneyForm({ variant, onClose }: FormProps) {
+  const id = useId();
+  const currency = useCurrency();
+  const accounts = accountsOf(useSettingsStore((s) => s.settings));
+  const [accountId, setAccountId] = useState(MAIN_ACCOUNT_ID);
+  const [amount, setAmount] = useState("");
+  const { pending, error, setError, run } = useSettingsForm(onClose);
+  const step = currency.decimals ? 0.01 : 1;
+  const credit = (body: Omit<CreateCredit, "accountId">) => void run(() => useCreditsStore.getState().create({ ...body, accountId }));
+
+  function topUp() {
+    const amountSgd = toSgd(amount, currency, { positive: true });
+    if (amountSgd === null) setError("Enter an amount above 0.");
+    else credit({ kind: "topup", amountSgd });
+  }
+
+  return (
+    <FormShell onSubmit={topUp} onClose={onClose} pending={pending} error={error} submitLabel="Top up">
+      {accounts.length > 1 && (
+        <Field id={`${id}-account`} label="Into">
+          <Select id={`${id}-account`} variant={variant} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+      <Field id={id} label={`Amount (${currency.code})`}>
+        <Input
+          id={id}
+          variant={variant}
+          type="number"
+          inputMode="decimal"
+          required
+          min={step}
+          step={step}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </Field>
+      <Button variant="secondary" disabled={pending} onClick={() => credit({ kind: "salary", amountSgd: SALARY_SGD })} className="disabled:opacity-60">
+        Pay salary (<Money sgd={SALARY_SGD} whole />)
+      </Button>
     </FormShell>
   );
 }

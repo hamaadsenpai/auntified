@@ -17,9 +17,9 @@ export function LedgerScreen() {
     <Screen className="lg:hidden">
       <header className="flex flex-none flex-col gap-[2px] px-[20px] pt-[16px] pb-[8px]">
         <h1 className="m-0 font-display text-[22px] leading-[1.1] font-bold">History</h1>
-        <span className="text-[13px] font-medium text-muted">Every roast and verdict, newest first</span>
+        <span className="text-[13px] font-medium text-muted">Every roast, verdict and credit, newest first</span>
       </header>
-      <div role="group" aria-label="Filter" className="flex flex-none gap-[8px] px-[20px] pt-[6px] pb-[10px]">
+      <div role="group" aria-label="Filter" className="flex flex-none gap-[8px] overflow-x-auto px-[20px] pt-[6px] pb-[10px] *:shrink-0">
         {(["All", ...FILTERS] as Filter[]).map((f) => (
           <Chip key={f} aria-pressed={ledger.filter === f} onClick={() => ledger.setFilter(f)} className={cn(ledger.filter === f && FILTER_ACTIVE)}>
             {f}

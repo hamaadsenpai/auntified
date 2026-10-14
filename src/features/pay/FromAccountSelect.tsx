@@ -1,16 +1,27 @@
 "use client";
 
-import { Select } from "@/components/ui";
+import { Select, type SelectVariant } from "@/components/ui";
 import { useCurrency, useSettings } from "@/store";
+import { usePayDraftStore } from "@/store/pay-draft.store";
+import { accountOf, accountsOf } from "@/utils/accounts";
 import { formatMoney } from "@/utils/format";
 
+/** The account paying for the draft, or the main one if the picked account was removed. */
+export function useFromAccount() {
+  const { settings } = useSettings();
+  return accountOf(settings, usePayDraftStore((s) => s.fromAccountId));
+}
+
 /** <option> only accepts plain text, so the balance is formatted here rather than with <Money>. */
-export function FromAccountSelect({ id }: { id: string }) {
+export function FromAccountSelect({ id, variant = "soft" }: { id: string; variant?: SelectVariant }) {
   const currency = useCurrency();
   const { settings } = useSettings();
+  const from = useFromAccount();
   return (
-    <Select id={id} variant="soft">
-      <option>{`${settings.accountName}, ${formatMoney(settings.balanceSgd, currency)}`}</option>
+    <Select id={id} variant={variant} value={from.id} onChange={(e) => usePayDraftStore.getState().setFromAccount(e.target.value)}>
+      {accountsOf(settings).map((a) => (
+        <option key={a.id} value={a.id}>{`${a.name}, ${formatMoney(a.balanceSgd, currency)}`}</option>
+      ))}
     </Select>
   );
 }

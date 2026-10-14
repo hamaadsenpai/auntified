@@ -52,7 +52,7 @@ export function LedgerDesktop() {
         <div className="flex flex-wrap items-center justify-between gap-[12px]">
           <div className="flex flex-col gap-[2px]">
             <h2 id="dlog-h" className="m-0 font-display text-[17px] font-bold">
-              Every roast and verdict
+              Every roast, verdict and credit
             </h2>
             <span className="text-[13px] font-medium text-muted">Newest first</span>
           </div>

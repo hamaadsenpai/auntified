@@ -6,6 +6,7 @@ import { useCurrency, useSettings } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
 import { cn } from "@/utils";
 import { convertFromSgd, formatMoney, formatNumber, withSymbol } from "@/utils/format";
+import { useFromAccount } from "./FromAccountSelect";
 
 const MAX_WHOLE_DIGITS = 10;
 const KEY = "h-[48px] cursor-pointer rounded-[14px] border-2 border-ink bg-cream px-[6px] py-[1px] active:translate-y-[1px] active:bg-lemon";
@@ -48,10 +49,11 @@ export function AmountPad({ children }: { children: ReactNode }) {
 }
 
 function AmountPadInner({ currency, children }: { currency: Currency; children: ReactNode }) {
-  const { settings, status } = useSettings();
+  const { status } = useSettings();
+  const from = useFromAccount();
   const [value, setValue] = useState(() => String(convertFromSgd(usePayDraftStore.getState().amountSgd, currency)));
   // The balance is 0 until settings load, so only warn once it is real.
-  const overBalance = status === "ready" && Number(value) > convertFromSgd(settings.balanceSgd, currency);
+  const overBalance = status === "ready" && Number(value) > convertFromSgd(from.balanceSgd, currency);
   const press = (key: AmountKey, digit = "") => {
     const next = pressKey(value, key, digit, currency.decimals);
     setValue(next);
@@ -69,7 +71,7 @@ function AmountPadInner({ currency, children }: { currency: Currency; children: 
         </output>
         <span className={cn("text-[13px] font-medium", overBalance ? "font-semibold text-brick" : "text-muted")}>
           {overBalance ? "More than you have. " : "From "}
-          {settings.accountName}, {formatMoney(settings.balanceSgd, currency)} available
+          {from.name}, {formatMoney(from.balanceSgd, currency)} available
         </span>
       </div>
       {children}

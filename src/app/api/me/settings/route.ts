@@ -4,6 +4,7 @@ import { LANGUAGES } from "@/features/settings/languages";
 import { ApiError } from "@/lib/api/errors";
 import { withHandler } from "@/lib/api/handler";
 import { getSettings, updateSettings } from "@/server/repositories/users.repository";
+import { MAIN_ACCOUNT_ID } from "@/utils/accounts";
 
 const amount = z.number().finite().min(0).max(LIMITS.MAX_AMOUNT_SGD);
 
@@ -11,6 +12,8 @@ const schema = z
   .object({
     accountName: z.string().trim().min(1).max(LIMITS.NAME),
     balanceSgd: amount,
+    addAccount: z.object({ name: z.string().trim().min(1).max(LIMITS.NAME), balanceSgd: amount }).strict(),
+    removeAccountId: z.string().min(1).max(64).refine((id) => id !== MAIN_ACCOUNT_ID),
     tone: z.enum(["roast", "gentle"]),
     language: z.string().refine((l) => LANGUAGES.includes(l)),
     voiceReplies: z.boolean(),

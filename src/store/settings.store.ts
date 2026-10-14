@@ -11,7 +11,7 @@ type SettingsState = {
   status: LoadStatus;
   error: string | null;
   load: (force?: boolean) => Promise<void>;
-  /** Optimistic: applies now, reverts if the save fails, then rethrows. */
+  /** Optimistic: applies now, reverts if the save fails, then rethrows. Account adds and removals show once the server answers. */
   save: (body: UpdateSettings) => Promise<void>;
 };
 

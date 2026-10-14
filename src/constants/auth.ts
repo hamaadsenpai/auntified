@@ -10,6 +10,8 @@ export const COLLECTIONS = {
   PAYEES: "payees",
   TRANSFERS: "transfers",
   EXPENSES: "expenses",
+  BILLS: "bills",
+  CREDITS: "credits",
 } as const;
 
 export const ENDPOINTS = {
@@ -23,6 +25,10 @@ export const ENDPOINTS = {
   TRANSFER: (id: string) => `/api/transfers/${encodeURIComponent(id)}`,
   EXPENSES: "/api/expenses",
   EXPENSE: (id: string) => `/api/expenses/${encodeURIComponent(id)}`,
+  BILLS: "/api/bills",
+  BILL: (id: string) => `/api/bills/${encodeURIComponent(id)}`,
+  CREDITS: "/api/credits",
   ASK: "/api/ask",
+  DEMO: "/api/demo",
 } as const;
 

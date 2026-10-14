@@ -1,21 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
 import { SendIcon, SpeakerIcon } from "@/components/icons";
 import { BackHeader } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
 import { Chip, UserBubble } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { askService } from "@/services/ask.service";
-import type { ApiFailure } from "@/types/api";
-import type { AskTurn } from "@/types/ask";
-
-/** Shown above the chat; not sent, and makes no claim about the user's data. */
-const INTRO = "Ask me anything about your money. I'll check your ledger before I answer.";
-const SUGGESTIONS = ["Can I afford this?", "Where did my money go?", "Am I on track for my goal?"];
-/** The API takes at most this many turns and this many characters per turn. */
-const MAX_TURNS = 20;
-const MAX_LENGTH = 500;
+import { speak } from "@/utils";
+import { INTRO, MAX_LENGTH, SUGGESTIONS, useAskChat } from "./useAskChat";
 
 function AuntieTurn({ children }: { children: string }) {
   return (
@@ -31,9 +22,8 @@ function AuntieTurn({ children }: { children: string }) {
         <button
           type="button"
           aria-label="Play her reply aloud"
-          disabled
-          aria-disabled="true"
-          className="flex h-[44px] w-[44px] flex-none cursor-not-allowed items-center justify-center rounded-[22px] border-[1.5px] border-line-strong bg-white opacity-50"
+          onClick={() => speak(children)}
+          className="flex h-[44px] w-[44px] flex-none cursor-pointer items-center justify-center rounded-[22px] border-[1.5px] border-line-strong bg-white"
         >
           <SpeakerIcon />
         </button>
@@ -43,41 +33,7 @@ function AuntieTurn({ children }: { children: string }) {
 }
 
 export function AskMobile() {
-  const [transcript, setTranscript] = useState<AskTurn[]>([]);
-  const [draft, setDraft] = useState("");
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [transcript, pending, error]);
-
-  async function send(question: string) {
-    const text = question.trim().slice(0, MAX_LENGTH);
-    if (!text || pending) return;
-    const next = [...transcript, { role: "user" as const, text }];
-    setTranscript(next);
-    setDraft("");
-    setPending(true);
-    setError(null);
-    try {
-      const { reply } = await askService.send({ transcript: next.slice(-MAX_TURNS) });
-      setTranscript([...next, { role: "auntie", text: reply }]);
-    } catch (err) {
-      // Put the question back so it can be sent again.
-      setTranscript(transcript);
-      setDraft(text);
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
-    } finally {
-      setPending(false);
-    }
-  }
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    void send(draft);
-  }
+  const { transcript, draft, setDraft, pending, error, endRef, send, handleSubmit } = useAskChat();
 
   return (
     <>
@@ -108,12 +64,13 @@ export function AskMobile() {
           ))}
         </div>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-none gap-[8px] border-t border-line px-[16px] pt-[12px] pb-[24px]">
+      <form onSubmit={handleSubmit} className="flex flex-none flex-wrap gap-[8px] border-t border-line px-[16px] pt-[12px] pb-[24px]">
         <label htmlFor="ask" className="absolute h-[1px] w-[1px] overflow-hidden [clip:rect(0_0_0_0)]">
           Ask Auntie
         </label>
         <input
           id="ask"
+          aria-describedby="ask-count"
           type="text"
           placeholder="Ask about your money"
           maxLength={MAX_LENGTH}
@@ -129,6 +86,7 @@ export function AskMobile() {
         >
           <SendIcon />
         </button>
+        <p id="ask-count" className="m-0 w-full text-right text-[12px] font-medium text-muted">{draft.length}/{MAX_LENGTH}</p>
       </form>
     </>
   );

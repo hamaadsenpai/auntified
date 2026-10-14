@@ -14,6 +14,7 @@ export const ROUTES = {
   PAY_WARN: "/pay/warn",
   PAY_BLOCKED: "/pay/blocked",
   PAY_BLOCKED_WHY: "/pay/blocked/why",
+  PAYEES: "/payees",
   PAYEE: (id: string) => `/payees/${id}`,
   LEDGER: "/ledger",
   SETTINGS: "/settings",

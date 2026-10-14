@@ -37,14 +37,16 @@ export function FeaturesScreen() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={feature.href}
-                  aria-label={`Try it, ${feature.title}`}
-                  className="mt-auto inline-flex min-h-[44px] items-center gap-[4px] self-start text-[15px] font-semibold no-underline"
-                >
-                  Try it
-                  <ChevronRightIcon size={16} />
-                </Link>
+                {feature.href && (
+                  <Link
+                    href={feature.href}
+                    aria-label={`Try it, ${feature.title}`}
+                    className="mt-auto inline-flex min-h-[44px] items-center gap-[4px] self-start text-[15px] font-semibold no-underline"
+                  >
+                    Try it
+                    <ChevronRightIcon size={16} />
+                  </Link>
+                )}
               </Card>
             </li>
           ))}
