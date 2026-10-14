@@ -13,8 +13,11 @@ import { seedFirstSalary } from "./credits.repository";
 
 const users = db.collection(COLLECTIONS.USERS);
 
-/** Creates `users/{uid}` on first sign-in (paid their first salary, so the balance isn't 0) and stamps `lastLoginAt` on every one after. */
-export async function upsertUserOnSignIn(token: DecodedIdToken) {
+/**
+ * Creates `users/{uid}` on first sign-in (paid their first salary, so the balance isn't 0) and stamps `lastLoginAt` on every one after.
+ * `acceptedTerms` (the signup checkbox) stamps `termsAcceptedAt` on the new record.
+ */
+export async function upsertUserOnSignIn(token: DecodedIdToken, acceptedTerms = false) {
   const ref = users.doc(token.uid);
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
@@ -30,6 +33,7 @@ export async function upsertUserOnSignIn(token: DecodedIdToken) {
       createdAt: FieldValue.serverTimestamp(),
       lastLoginAt: FieldValue.serverTimestamp(),
       balanceSgd: SALARY_SGD,
+      ...(acceptedTerms && { termsAcceptedAt: FieldValue.serverTimestamp() }),
     });
     seedFirstSalary(tx, token.uid);
   });
@@ -80,6 +84,7 @@ export async function getSettings(uid: string): Promise<AccountSettings> {
     voiceReplies: pick("voiceReplies"),
     trustedContact: pick("trustedContact"),
     savingsGoal: pick("savingsGoal"),
+    lockedSgd: pick("lockedSgd"),
   };
 }
 

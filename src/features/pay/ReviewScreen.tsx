@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { BackHeader, Screen } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
 import { Avatar, Button, Money, Tag } from "@/components/ui";
 import { ROUTES, withTransfer } from "@/constants";
 import { usePayees, useSettings, useTransfers, useTransfersStore } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
-import type { ApiFailure } from "@/types/api";
-import { accountOf } from "@/utils/accounts";
+import { errorMessage } from "@/utils";
+import { accountOf, sendableSgd } from "@/utils/accounts";
 import { initials, isNewPayee, transfersLabel } from "./PayScreen";
 
 export function ReviewScreen() {
@@ -21,7 +22,6 @@ export function ReviewScreen() {
   const { settings } = useSettings();
   const [missing, setMissing] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const transfer = id ? items.find((t) => t.id === id) : undefined;
   const payee = transfer && payees.items.find((p) => p.id === transfer.payeeId);
 
@@ -37,13 +37,12 @@ export function ReviewScreen() {
   async function cancel() {
     if (!transfer || !window.confirm("Cancel this transfer? Nothing will be sent.")) return;
     setPending(true);
-    setError(null);
     try {
       await useTransfersStore.getState().update(transfer.id, { status: "cancelled" });
       usePayDraftStore.getState().reset();
       router.push(ROUTES.HOME);
     } catch (err) {
-      setError((err as ApiFailure["error"]).message);
+      toast.error(errorMessage(err));
       setPending(false);
     }
   }
@@ -79,6 +78,7 @@ export function ReviewScreen() {
   }
 
   const from = accountOf(settings, transfer.fromAccountId);
+  const availableSgd = sendableSgd(settings, from);
   return (
     <Screen className="lg:hidden">
       <BackHeader backHref={ROUTES.PAY} title="Review transfer" />
@@ -111,7 +111,7 @@ export function ReviewScreen() {
           <div className="flex justify-between gap-[12px] border-b border-line py-[12px]">
             <dt className="text-[14px] font-medium text-muted">From</dt>
             <dd className="m-0 flex flex-col gap-[2px] text-right text-[14px] font-semibold">
-              {from.name}<span className="text-[13px] font-medium text-muted"><Money sgd={from.balanceSgd} /> available</span>
+              {from.name}<span className="text-[13px] font-medium text-muted"><Money sgd={availableSgd} /> available</span>
             </dd>
           </div>
           <div className="flex justify-between gap-[12px] border-b border-line py-[12px]">
@@ -135,11 +135,6 @@ export function ReviewScreen() {
               ))}
             </ul>
           </div>
-        )}
-        {error && (
-          <p role="alert" className="m-0 text-[14px] font-semibold text-brick">
-            {error}
-          </p>
         )}
       </main>
       <div className="flex flex-none flex-col gap-[10px] px-[20px] pt-[12px] pb-[24px]">

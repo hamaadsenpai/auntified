@@ -7,7 +7,7 @@ import { ROUTES } from "@/constants";
 import { PayeeDesktop } from "./PayeeDesktop";
 import { PayeeForm } from "./PayeeForm";
 import { RequestForm } from "./RequestForm";
-import { initials, PastAttempts, PayeeBalance, PayeeError, usePayee } from "./usePayee";
+import { initials, PastAttempts, PayeeBalance, usePayee } from "./usePayee";
 
 /** Renders both layouts from one usePayee call, so the fallback fetch and the action state are not doubled. */
 export function PayeeScreen({ id }: { id: string }) {
@@ -85,7 +85,6 @@ export function PayeeScreen({ id }: { id: string }) {
           </dl>
           <PayeeBalance m={m} />
           <PastAttempts m={m} />
-          <PayeeError error={m.error} />
         </main>
         <div className="flex flex-none flex-col gap-[10px] px-[20px] pt-[12px] pb-[24px]">
           <Button className="disabled:opacity-60" disabled={m.pending !== null} onClick={m.toggleReport}>

@@ -1,11 +1,12 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import { Button, Input, Select } from "@/components/ui";
 import { EXPENSE_CATEGORIES, LIMITS } from "@/constants";
 import { useCurrency } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { CreateExpense, Expense } from "@/types/expense";
+import { errorMessage } from "@/utils";
 import { convertFromSgd } from "@/utils/format";
 import { fromDateInput, toDateInput } from "./week";
 
@@ -31,13 +32,12 @@ export function ExpenseForm({ initial, submitLabel, onSubmit, onCancel }: Expens
     date: initial ? toDateInput(new Date(initial.spentAt)) : today,
   });
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const amount = Number(values.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError("Enter an amount more than zero.");
+      toast.error("Enter an amount more than zero.");
       return;
     }
     // Untouched fields keep their stored value, so editing the name doesn't round the amount or move the time.
@@ -45,11 +45,10 @@ export function ExpenseForm({ initial, submitLabel, onSubmit, onCancel }: Expens
     const original = initial ? new Date(initial.spentAt) : new Date();
     const spentAt = initial && values.date === toDateInput(original) ? original : fromDateInput(values.date, original);
     setPending(true);
-    setError(null);
     try {
       await onSubmit({ name: values.name.trim(), category: values.category, amountSgd, spentAt: spentAt.toISOString() });
     } catch (err) {
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
+      toast.error(errorMessage(err));
     } finally {
       setPending(false);
     }
@@ -119,11 +118,6 @@ export function ExpenseForm({ initial, submitLabel, onSubmit, onCancel }: Expens
           />
         </div>
       </div>
-      {error && (
-        <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-          {error}
-        </p>
-      )}
       <div className="flex gap-[12px]">
         {onCancel && (
           <Button variant="secondary" className="flex-1" disabled={pending} onClick={onCancel}>

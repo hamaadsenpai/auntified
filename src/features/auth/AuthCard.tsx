@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
+import toast from "react-hot-toast";
 import { GoogleIcon } from "@/components/icons";
 import { AuntieBao, type AuntieBaoMood } from "@/components/mascot";
 import { AuntieBubble, Button, Card } from "@/components/ui";
@@ -25,17 +26,15 @@ type AuthCardProps = {
 /** Shared shell for Log in and Sign up: Google button, email form, errors, and the redirect once signed in. */
 export function AuthCard({ title, intro, greeting, mood = "meh", submitLabel, switchPrompt, switchLabel, switchHref, onSubmit, children }: AuthCardProps) {
   const [pending, setPending] = useState<"email" | "google" | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   async function run(kind: "email" | "google", signIn: () => Promise<void>) {
     setPending(kind);
-    setError(null);
     try {
       await signIn();
       // Full load, so the server renders with the new session cookie and no stale client cache survives.
       location.assign(safeNextPath(new URLSearchParams(location.search).get("next"), ROUTES.HOME));
     } catch (err) {
-      setError(authErrorMessage(err));
+      toast.error(authErrorMessage(err));
       setPending(null);
     }
   }
@@ -75,11 +74,6 @@ export function AuthCard({ title, intro, greeting, mood = "meh", submitLabel, sw
           {/* POST, so a submit before the JS loads can never put the password in the URL. */}
           <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-[16px]">
             {children}
-            {error && (
-              <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-                {error}
-              </p>
-            )}
             <Button type="submit" className="mt-[4px] w-full disabled:opacity-60" disabled={pending !== null}>
               {pending === "email" ? "One moment…" : submitLabel}
             </Button>

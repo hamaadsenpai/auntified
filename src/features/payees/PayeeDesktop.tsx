@@ -6,7 +6,7 @@ import { Avatar, Button } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { PayeeForm } from "./PayeeForm";
 import { RequestForm } from "./RequestForm";
-import { initials, PastAttempts, PayeeBalance, PayeeError, type PayeeModel } from "./usePayee";
+import { initials, PastAttempts, PayeeBalance, type PayeeModel } from "./usePayee";
 
 const PANEL = "flex flex-col rounded-[24px] border-[2.5px] border-ink px-[24px] py-[20px] shadow-hard-md";
 const MAIN = "hidden min-h-dvh min-w-0 flex-col gap-[24px] bg-white px-[40px] py-[32px] lg:flex";
@@ -89,7 +89,6 @@ export function PayeeDesktop({ m }: { m: PayeeModel }) {
                 <dd className="m-0 font-display text-[16px] font-bold">{payee.reported ? "Yes, you reported them" : "No"}</dd>
               </div>
             </dl>
-            <PayeeError error={m.error} />
             <div className="flex gap-[12px] border-t border-line pt-[16px]">
               <Button className="flex-1 disabled:opacity-60" disabled={m.pending !== null} onClick={m.toggleReport}>
                 {m.pending === "report" ? "Saving…" : payee.reported ? "Undo report" : "Report this payee"}

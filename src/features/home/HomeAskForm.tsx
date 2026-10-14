@@ -9,7 +9,7 @@ const SUGGESTIONS = ["Can I afford this?", "Where did my money go?", "Am I on tr
 
 /** Home's Ask Auntie box: the chat so far, the question input and suggestion chips. */
 export function HomeAskForm() {
-  const { transcript, draft, setDraft, pending, error, send, handleSubmit } = useAskChat();
+  const { transcript, draft, setDraft, pending, send, handleSubmit } = useAskChat();
 
   return (
     <>
@@ -60,11 +60,6 @@ export function HomeAskForm() {
           <SendIcon />
         </button>
         <p id="dask-count" className="m-0 w-full text-right text-[12px] font-medium text-muted">{draft.length}/{MAX_LENGTH}</p>
-        {error && (
-          <p role="alert" className="m-0 w-full rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-            {error}
-          </p>
-        )}
         <div className="flex w-full gap-[8px]">
           {SUGGESTIONS.map((s) => (
             <Chip key={s} disabled={pending} onClick={() => void send(s)} className="border-[1.5px] disabled:cursor-default disabled:opacity-60">

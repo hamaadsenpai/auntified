@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui";
 import { PayeeForm } from "./PayeeForm";
-import { PayeeError } from "./usePayee";
 import { PayeeRows, RecentBills, WhoOwesWhom, type PayeesListModel } from "./usePayeesList";
 import { SplitForm } from "./SplitForm";
 
@@ -24,7 +23,6 @@ export function PayeesDesktop({ m }: { m: PayeesListModel }) {
           {m.adding ? "Close" : "Add payee"}
         </Button>
       </header>
-      <PayeeError error={m.error} />
       <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] items-start gap-[24px]">
         <div className="flex flex-col gap-[24px]">
           {m.adding && (

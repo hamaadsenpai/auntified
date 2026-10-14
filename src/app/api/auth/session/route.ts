@@ -12,7 +12,7 @@ function fail(status: number, code: string, message: string) {
 export async function POST(req: NextRequest) {
   if (!isSameOrigin(req)) return fail(403, "FORBIDDEN", "Bad origin.");
 
-  const body = (await req.json().catch(() => null)) as { idToken?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { idToken?: unknown; acceptedTerms?: unknown } | null;
   const idToken = typeof body?.idToken === "string" ? body.idToken : null;
   if (!idToken) return fail(400, "BAD_REQUEST", "Missing ID token.");
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const decoded = await adminAuth.verifyIdToken(idToken, true);
     // createSessionCookie only accepts tokens from a sign-in in the last 5 minutes.
     const cookie = await adminAuth.createSessionCookie(idToken, { expiresIn: SESSION.MAX_AGE_MS });
-    await upsertUserOnSignIn(decoded);
+    await upsertUserOnSignIn(decoded, body?.acceptedTerms === true);
 
     const res = NextResponse.json({ success: true, data: { uid: decoded.uid } });
     res.cookies.set(SESSION.COOKIE, cookie, {

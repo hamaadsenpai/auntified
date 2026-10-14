@@ -5,6 +5,8 @@ export const EXPENSE_CATEGORIES = [
   "Rides",
   "Bubble tea",
   "Subscriptions",
+  "Bills",
+  "Insurance",
   "Shopping",
   "Groceries",
   "Other",
@@ -20,7 +22,11 @@ export const DEFAULT_SETTINGS: AccountSettings = {
   voiceReplies: true,
   trustedContact: null,
   savingsGoal: null,
+  lockedSgd: 0,
 };
+
+/** How long a warned transfer waits before the user can send it anyway. */
+export const COOL_OFF_HOURS = 12;
 
 /** The simulated monthly salary: a new user's first credit, and the Settings "Pay salary" amount. */
 export const SALARY_SGD = 3500;
@@ -35,4 +41,8 @@ export const LIMITS = {
   REFERENCE: 140,
   APPEAL: 500,
   MAX_AMOUNT_SGD: 10_000_000,
+  /** A message pasted into the scam scanner. */
+  SCAN_TEXT: 2000,
+  /** A screenshot for the scanner, or a bank statement to import. */
+  UPLOAD_BYTES: 4 * 1024 * 1024,
 } as const;

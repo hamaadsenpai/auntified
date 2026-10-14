@@ -11,3 +11,7 @@ export const accountsOf = (s: Pick<AccountSettings, "accountName" | "balanceSgd"
 /** Account `id`, or the main one if it has since been removed. */
 export const accountOf = (s: Pick<AccountSettings, "accountName" | "balanceSgd" | "accounts">, id: string): Account =>
   accountsOf(s).find((a) => a.id === id) ?? accountsOf(s)[0];
+
+/** What `account` can send: its balance less the Money Lock, which sits on the main account only. */
+export const sendableSgd = (s: Pick<AccountSettings, "lockedSgd">, account: Account): number =>
+  Math.max(0, account.balanceSgd - (account.id === MAIN_ACCOUNT_ID ? s.lockedSgd : 0));

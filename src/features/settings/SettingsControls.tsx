@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import toast from "react-hot-toast";
 import { AuntieBao } from "@/components/mascot";
 import { Select } from "@/components/ui";
 import { useSettings, useSettingsStore } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { UpdateSettings } from "@/types/settings";
-import { cn } from "@/utils";
+import { cn, errorMessage } from "@/utils";
 import { LANGUAGES } from "./languages";
 
 type Variant = "mobile" | "desktop";
@@ -16,30 +15,12 @@ const TONES = [
   { value: "gentle", label: "Gentle", hint: "Same advice, softer landing.", mood: "sleep" },
 ] as const;
 
-export function errorMessage(err: unknown) {
-  return (err as ApiFailure["error"] | undefined)?.message ?? "Something went wrong. Try again.";
-}
-
-export function SaveError({ error, className }: { error: string | null; className?: string }) {
-  if (!error) return null;
-  return (
-    <p role="alert" className={cn("m-0 text-[13px] font-semibold text-brick", className)}>
-      {error}
-    </p>
-  );
-}
-
-/** Saves one change at a time and keeps the last failure to show next to the control. */
-function useInstantSave() {
-  const [error, setError] = useState<string | null>(null);
-  function save(body: UpdateSettings) {
-    setError(null);
-    useSettingsStore
-      .getState()
-      .save(body)
-      .catch((err: unknown) => setError(errorMessage(err)));
-  }
-  return { error, save };
+/** Saves one change at a time; a failure shows as a toast. */
+function save(body: UpdateSettings) {
+  useSettingsStore
+    .getState()
+    .save(body)
+    .catch((err: unknown) => toast.error(errorMessage(err)));
 }
 
 /** Shown at the top of each layout when settings fail to load. */
@@ -62,7 +43,6 @@ export function SettingsLoadError() {
 
 export function ToneOptions({ variant }: { variant: Variant }) {
   const { settings, status } = useSettings();
-  const { error, save } = useInstantSave();
   const ready = status === "ready";
 
   if (variant === "mobile") {
@@ -94,7 +74,6 @@ export function ToneOptions({ variant }: { variant: Variant }) {
             </label>
           );
         })}
-        <SaveError error={error} />
       </fieldset>
     );
   }
@@ -124,14 +103,12 @@ export function ToneOptions({ variant }: { variant: Variant }) {
           </label>
         ))}
       </div>
-      <SaveError error={error} />
     </fieldset>
   );
 }
 
 export function LanguageSelect({ variant }: { variant: Variant }) {
   const { settings, status } = useSettings();
-  const { error, save } = useInstantSave();
   const ready = status === "ready";
   const id = variant === "mobile" ? "lang" : "dlang";
 
@@ -152,14 +129,12 @@ export function LanguageSelect({ variant }: { variant: Variant }) {
           <option key={l}>{l}</option>
         ))}
       </Select>
-      <SaveError error={error} />
     </div>
   );
 }
 
 export function VoiceSwitch({ variant }: { variant: Variant }) {
   const { settings, status } = useSettings();
-  const { error, save } = useInstantSave();
   const ready = status === "ready";
   const on = ready && settings.voiceReplies;
   const toggle = () => save({ voiceReplies: !settings.voiceReplies });
@@ -186,7 +161,6 @@ export function VoiceSwitch({ variant }: { variant: Variant }) {
             </span>
           </button>
         </div>
-        <SaveError error={error} className="pb-[10px]" />
       </div>
     );
   }
@@ -211,7 +185,6 @@ export function VoiceSwitch({ variant }: { variant: Variant }) {
           <span className="h-[24px] w-[24px] rounded-[12px] bg-white"></span>
         </span>
       </label>
-      <SaveError error={error} />
     </div>
   );
 }

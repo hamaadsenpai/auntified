@@ -4,7 +4,7 @@ import { COLLECTIONS, DEFAULT_SETTINGS } from "@/constants";
 import { ApiError } from "@/lib/api/errors";
 import { db } from "@/lib/firebase/admin";
 import type { Account } from "@/types/settings";
-import { accountsOf, MAIN_ACCOUNT_ID } from "@/utils/accounts";
+import { accountsOf, MAIN_ACCOUNT_ID, sendableSgd } from "@/utils/accounts";
 
 /** Every account on a `users/{uid}` doc, the main one first. */
 export function accountsFrom(data: DocumentData | undefined): Account[] {
@@ -15,14 +15,19 @@ export function accountsFrom(data: DocumentData | undefined): Account[] {
   });
 }
 
+/** What `account` can send given the Money Lock stored on the same `users/{uid}` doc. */
+export const sendableFrom = (data: DocumentData | undefined, account: Account) =>
+  sendableSgd({ lockedSgd: typeof data?.lockedSgd === "number" ? data.lockedSgd : 0 }, account);
+
 /**
  * Reads account `accountId` in `tx` (a read, so call it before the transaction's writes); 404 if it doesn't exist.
- * `move` adds `deltaSgd` to its balance. Extra accounts sit in an array, so moving one rewrites the
+ * `sendableSgd` is its balance less the Money Lock. `move` adds `deltaSgd` to its balance. Extra accounts sit in an array, so moving one rewrites the
  * array from this read, and the transaction retries if anything changed it meanwhile.
  */
 export async function readAccount(tx: Transaction, uid: string, accountId: string) {
   const ref = db.collection(COLLECTIONS.USERS).doc(uid);
-  const accounts = accountsFrom((await tx.get(ref)).data());
+  const data = (await tx.get(ref)).data();
+  const accounts = accountsFrom(data);
   const account = accounts.find((a) => a.id === accountId);
   if (!account) throw ApiError.notFound("That account no longer exists.");
   const move = (deltaSgd: number) =>
@@ -37,5 +42,5 @@ export async function readAccount(tx: Transaction, uid: string, accountId: strin
           },
       { merge: true },
     );
-  return { ...account, move };
+  return { ...account, sendableSgd: sendableFrom(data, account), move };
 }

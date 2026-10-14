@@ -33,7 +33,7 @@ function AuntieTurn({ children }: { children: string }) {
 }
 
 export function AskDesktop() {
-  const { transcript, draft, setDraft, pending, error, endRef, send, handleSubmit } = useAskChat();
+  const { transcript, draft, setDraft, pending, endRef, send, handleSubmit } = useAskChat();
   return (
     // Fixed height so the chat scrolls inside its panel and the input stays in view.
     <main className="hidden h-[calc(100dvh-var(--banner-h,0px))] min-w-0 flex-col gap-[24px] bg-white px-[40px] py-[32px] lg:flex">
@@ -61,11 +61,6 @@ export function AskDesktop() {
               ),
             )}
             {pending && <p className="m-0 ml-[64px] text-[14px] font-medium text-muted">Auntie is checking your ledger…</p>}
-            {error && (
-              <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-                {error}
-              </p>
-            )}
             <div ref={endRef}></div>
           </div>
           <form onSubmit={handleSubmit} className="flex flex-none flex-wrap gap-[8px] border-t border-line px-[24px] py-[16px]">

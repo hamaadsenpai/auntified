@@ -11,3 +11,4 @@ export { Avatar } from "./Avatar";
 export { Money } from "./Money";
 export { Select, FIELD_BASE, FIELD_VARIANTS, type SelectVariant } from "./Select";
 export { Input } from "./Input";
+export { Toaster } from "./Toaster";

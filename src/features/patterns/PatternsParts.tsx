@@ -4,16 +4,16 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { Card, Money } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { byCategory, DAY_MS, formatTime, inRange, sumSgd, useNow, weekWindow } from "@/features/roast/week";
-import { useExpenses, useExpensesStore, useTransfers, useTransfersStore } from "@/store";
+import { findRecurring } from "@/features/roast/cuts";
+import { byCategory, formatDay, formatTime, inRange, sumSgd, useNow, weekWindow, weeklyNormal } from "@/features/roast/week";
+import { useExpenses, useExpensesStore, usePayees, useTransfers, useTransfersStore } from "@/store";
 import type { TransferStatus } from "@/types/transfer";
 import { cn } from "@/utils";
+import { coverageGaps, type CoverageGap } from "./coverage";
 
 const SENT: TransferStatus[] = ["passed", "overridden"];
 /** Fewer than this and a median or an hour range says nothing. */
 const MIN_TRANSFERS = 3;
-/** "Normal" is the average week over this many weeks before this one. */
-const NORMAL_WEEKS = 12;
 const HOT_RATIO = 1.5;
 
 type Variant = "mobile" | "desktop";
@@ -58,6 +58,7 @@ function Status({ error, onRetry }: { error: string | null; onRetry: () => void 
 export function usePatterns() {
   const transfers = useTransfers();
   const expenses = useExpenses();
+  const payees = usePayees();
   const now = useNow();
 
   const amounts = useMemo(() => {
@@ -77,22 +78,28 @@ export function usePatterns() {
   const weeks = useMemo(() => {
     if (!now) return null;
     const { start, end } = weekWindow(now);
-    const before = new Date(start.getTime() - NORMAL_WEEKS * 7 * DAY_MS);
     const week = expenses.items.filter((e) => inRange(e, start, end));
-    const past = expenses.items.filter((e) => inRange(e, before, start));
-    const normal = new Map(byCategory(past).map((c) => [c.category, c.totalSgd / NORMAL_WEEKS]));
+    const { perCategory: normal, totalSgd: normalTotal, weeks: normalWeeks } = weeklyNormal(expenses.items, start);
     const rows = byCategory(week).map((c) => ({ name: c.category, week: c.totalSgd, normal: normal.get(c.category) ?? 0 }));
     // Categories with a normal but nothing this week still belong in the comparison.
     for (const [name, value] of normal) if (!rows.some((r) => r.name === name)) rows.push({ name, week: 0, normal: value });
     const max = Math.max(0, ...rows.flatMap((r) => [r.week, r.normal]));
-    const normalTotal = sumSgd(past) / NORMAL_WEEKS;
-    return { rows, max, ratio: normalTotal > 0 ? sumSgd(week) / normalTotal : null };
+    return { rows, max, normalWeeks, ratio: normalTotal > 0 ? sumSgd(week) / normalTotal : null };
   }, [expenses.items, now]);
+
+  const recurring = useMemo(() => (now ? findRecurring(expenses.items, now) : []), [expenses.items, now]);
+  const coverage = useMemo(
+    () => (now ? coverageGaps(expenses.items, transfers.items, payees.items, now) : []),
+    [expenses.items, transfers.items, payees.items, now],
+  );
 
   return {
     transfers,
     expenses,
     amounts,
+    recurring,
+    coverage,
+    coverageReady: expenses.status === "ready" && transfers.status === "ready" && payees.status === "ready" && now !== null,
     hours,
     weeks,
     transfersReady: transfers.status === "ready",
@@ -226,13 +233,99 @@ export function WeekVsNormal({ p, variant = "mobile" }: PartProps) {
 
 export function HotWeek({ p }: { p: Patterns }) {
   const ratio = p.weeks?.ratio;
-  if (!p.expensesReady || ratio == null || ratio < HOT_RATIO) return null;
+  if (!p.expensesReady || !p.weeks || ratio == null || ratio < HOT_RATIO) return null;
   return (
     <div className="flex flex-col gap-[4px] rounded-[16px] border-[1.5px] border-night px-[16px] py-[14px]">
       <span className="font-display text-[15px] font-bold">This week ran hot</span>
       <span className="text-[14px] leading-[1.4] font-medium text-muted">
-        Spending is {ratio.toFixed(1)}x your average week over the last {NORMAL_WEEKS} weeks.
+        Spending is {ratio.toFixed(1)}x your average week over the last {p.weeks.normalWeeks === 1 ? "week" : `${p.weeks.normalWeeks} weeks`}.
       </span>
+    </div>
+  );
+}
+
+function Heading({ variant, children }: { variant: Variant; children: React.ReactNode }) {
+  return <h2 className={cn("m-0 font-display font-bold", variant === "desktop" ? "text-[17px]" : "text-[16px]")}>{children}</h2>;
+}
+
+/** Bills and subscriptions that keep charging, from logged spending and imported statements. */
+export function RecurringCharges({ p, variant = "mobile" }: PartProps) {
+  const monthly = p.recurring.reduce((sum, r) => sum + r.monthlySgd, 0);
+  return (
+    <div className="flex flex-col gap-[8px]">
+      <div className="flex items-baseline justify-between">
+        <Heading variant={variant}>Recurring bills and subscriptions</Heading>
+        {p.recurring.length > 0 && (
+          <span className="text-[14px] font-semibold">
+            <Money sgd={monthly} whole /> a month
+          </span>
+        )}
+      </div>
+      {!p.expensesReady ? (
+        <Status error={p.expenses.error} onRetry={p.retryExpenses} />
+      ) : p.recurring.length === 0 ? (
+        <p className="m-0 text-[14px] font-medium text-muted">
+          None spotted yet. Upload a bank statement on the{" "}
+          <Link href={ROUTES.ROAST} className="font-semibold text-teal">
+            weekly roast
+          </Link>{" "}
+          and Auntie will find them.
+        </p>
+      ) : (
+        <ul className="m-0 flex list-none flex-col border-t border-line p-0">
+          {p.recurring.map((r) => (
+            <li key={r.name.toLowerCase()} className="grid grid-cols-[1fr_auto] gap-x-[12px] border-b border-line py-[8px] text-[14px] font-medium">
+              <span className="font-semibold">{r.name}</span>
+              <Money sgd={r.monthlySgd} />
+              <span className="text-[13px] text-muted">
+                {r.category} · last {formatDay(new Date(r.lastAt))}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function GapText({ gap }: { gap: CoverageGap }) {
+  if (gap.kind === "hospital") return <>No insurance premiums show up in your spending. Check you&apos;re covered for a hospital stay beyond the basics.</>;
+  if (gap.kind === "accident") {
+    return (
+      <>
+        You spend about <Money sgd={gap.monthlySgd} whole /> a month on rides. Personal accident cover pays out for injuries on the road.
+      </>
+    );
+  }
+  return (
+    <>
+      You send family about <Money sgd={gap.monthlySgd} whole /> a month, mostly to {gap.payee}. Term life cover keeps that going if you can&apos;t.
+    </>
+  );
+}
+
+const GAP_TITLE: Record<CoverageGap["kind"], string> = { hospital: "Hospital cover", accident: "Personal accident", life: "Life cover" };
+
+/** Insurance lite: where the user's spending says they may be under-covered. */
+export function CoverageCheck({ p, variant = "mobile" }: PartProps) {
+  return (
+    <div className="flex flex-col gap-[10px]">
+      <Heading variant={variant}>Coverage check</Heading>
+      {!p.coverageReady ? (
+        <p className="m-0 text-[14px] font-medium text-muted">Loading…</p>
+      ) : p.coverage.length === 0 ? (
+        <p className="m-0 text-[14px] font-medium text-muted">No gaps spotted from your spending.</p>
+      ) : (
+        p.coverage.map((gap) => (
+          <div key={gap.kind} className="flex flex-col gap-[4px] rounded-[16px] border-[1.5px] border-night px-[16px] py-[14px]">
+            <span className="font-display text-[15px] font-bold">You&apos;re under-covered for {GAP_TITLE[gap.kind].toLowerCase()}</span>
+            <span className="text-[14px] leading-[1.4] font-medium text-muted">
+              <GapText gap={gap} />
+            </span>
+          </div>
+        ))
+      )}
+      <span className="text-[12px] font-medium text-muted">From your spending here only. Not financial advice.</span>
     </div>
   );
 }

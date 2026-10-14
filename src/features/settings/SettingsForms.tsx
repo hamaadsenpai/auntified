@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
+import toast from "react-hot-toast";
 import { Button, Input, Money, Select, type SelectVariant } from "@/components/ui";
 import { LIMITS, SALARY_SGD } from "@/constants";
 import type { Currency } from "@/constants/currencies";
@@ -8,8 +9,8 @@ import { useCreditsStore, useCurrency, useSettingsStore } from "@/store";
 import type { CreateCredit } from "@/types/credit";
 import type { UpdateSettings } from "@/types/settings";
 import { accountsOf, MAIN_ACCOUNT_ID } from "@/utils/accounts";
+import { errorMessage } from "@/utils";
 import { convertFromSgd } from "@/utils/format";
-import { errorMessage } from "./SettingsControls";
 
 type FormProps = {
   /** Field look: "bold" on mobile, "soft" on desktop. */
@@ -31,25 +32,23 @@ function fromSgd(sgd: number, currency: Currency) {
   return String(convertFromSgd(sgd, currency));
 }
 
-/** Saves through the settings store (or runs any other action) and keeps the error for the form's alert. */
+/** Saves through the settings store (or runs any other action); a failure shows as a toast. */
 function useSettingsForm(onClose: () => void) {
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function run(action: () => Promise<unknown>) {
     setPending(true);
-    setError(null);
     try {
       await action();
       onClose();
     } catch (err) {
-      setError(errorMessage(err));
+      toast.error(errorMessage(err));
       setPending(false);
     }
   }
 
   const submit = (body: UpdateSettings) => run(() => useSettingsStore.getState().save(body));
-  return { pending, error, setError, submit, run };
+  return { pending, submit, run };
 }
 
 function Field({ id, label, optional, children }: { id: string; label: string; optional?: boolean; children: ReactNode }) {
@@ -68,14 +67,12 @@ function FormShell({
   onSubmit,
   onClose,
   pending,
-  error,
   submitLabel = "Save",
   children,
 }: {
   onSubmit: () => void;
   onClose: () => void;
   pending: boolean;
-  error: string | null;
   submitLabel?: string;
   children: ReactNode;
 }) {
@@ -87,11 +84,6 @@ function FormShell({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-[12px] py-[12px]">
       {children}
-      {error && (
-        <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-          {error}
-        </p>
-      )}
       <div className="flex gap-[12px]">
         <Button variant="secondary" className="flex-1" disabled={pending} onClick={onClose}>
           Cancel
@@ -107,10 +99,10 @@ function FormShell({
 export function AccountNameForm({ variant, onClose }: FormProps) {
   const id = useId();
   const [name, setName] = useState(() => useSettingsStore.getState().settings.accountName);
-  const { pending, error, submit } = useSettingsForm(onClose);
+  const { pending, submit } = useSettingsForm(onClose);
 
   return (
-    <FormShell onSubmit={() => void submit({ accountName: name.trim() })} onClose={onClose} pending={pending} error={error}>
+    <FormShell onSubmit={() => void submit({ accountName: name.trim() })} onClose={onClose} pending={pending}>
       <Field id={id} label="Account name">
         <Input id={id} variant={variant} required maxLength={LIMITS.NAME} placeholder="e.g. Everyday Account" value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
@@ -122,16 +114,16 @@ export function BalanceForm({ variant, onClose }: FormProps) {
   const id = useId();
   const currency = useCurrency();
   const [balance, setBalance] = useState(() => fromSgd(useSettingsStore.getState().settings.balanceSgd, currency));
-  const { pending, error, setError, submit } = useSettingsForm(onClose);
+  const { pending, submit } = useSettingsForm(onClose);
 
   function save() {
     const balanceSgd = toSgd(balance, currency);
-    if (balanceSgd === null) setError("Enter a balance of 0 or more.");
+    if (balanceSgd === null) toast.error("Enter a balance of 0 or more.");
     else void submit({ balanceSgd });
   }
 
   return (
-    <FormShell onSubmit={save} onClose={onClose} pending={pending} error={error}>
+    <FormShell onSubmit={save} onClose={onClose} pending={pending}>
       <Field id={id} label={`Balance (${currency.code})`}>
         <Input
           id={id}
@@ -155,17 +147,17 @@ export function AddAccountForm({ variant, onClose }: FormProps) {
   const currency = useCurrency();
   const [name, setName] = useState("");
   const [balance, setBalance] = useState("0");
-  const { pending, error, setError, submit } = useSettingsForm(onClose);
+  const { pending, submit } = useSettingsForm(onClose);
 
   function save() {
     const balanceSgd = toSgd(balance, currency);
-    if (!name.trim()) return setError("Enter a name for the account.");
-    if (balanceSgd === null) return setError("Enter a balance of 0 or more.");
+    if (!name.trim()) return toast.error("Enter a name for the account.");
+    if (balanceSgd === null) return toast.error("Enter a balance of 0 or more.");
     void submit({ addAccount: { name: name.trim(), balanceSgd } });
   }
 
   return (
-    <FormShell onSubmit={save} onClose={onClose} pending={pending} error={error} submitLabel="Add account">
+    <FormShell onSubmit={save} onClose={onClose} pending={pending} submitLabel="Add account">
       <Field id={id} label="Account name">
         <Input id={id} variant={variant} required maxLength={LIMITS.NAME} placeholder="e.g. Savings" value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
@@ -193,18 +185,18 @@ export function AddMoneyForm({ variant, onClose }: FormProps) {
   const accounts = accountsOf(useSettingsStore((s) => s.settings));
   const [accountId, setAccountId] = useState(MAIN_ACCOUNT_ID);
   const [amount, setAmount] = useState("");
-  const { pending, error, setError, run } = useSettingsForm(onClose);
+  const { pending, run } = useSettingsForm(onClose);
   const step = currency.decimals ? 0.01 : 1;
   const credit = (body: Omit<CreateCredit, "accountId">) => void run(() => useCreditsStore.getState().create({ ...body, accountId }));
 
   function topUp() {
     const amountSgd = toSgd(amount, currency, { positive: true });
-    if (amountSgd === null) setError("Enter an amount above 0.");
+    if (amountSgd === null) toast.error("Enter an amount above 0.");
     else credit({ kind: "topup", amountSgd });
   }
 
   return (
-    <FormShell onSubmit={topUp} onClose={onClose} pending={pending} error={error} submitLabel="Top up">
+    <FormShell onSubmit={topUp} onClose={onClose} pending={pending} submitLabel="Top up">
       {accounts.length > 1 && (
         <Field id={`${id}-account`} label="Into">
           <Select id={`${id}-account`} variant={variant} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
@@ -239,7 +231,7 @@ export function AddMoneyForm({ variant, onClose }: FormProps) {
 export function TrustedContactForm({ variant, onClose }: FormProps) {
   const id = useId();
   const [values, setValues] = useState(() => useSettingsStore.getState().settings.trustedContact ?? { name: "", relation: "", phone: "" });
-  const { pending, error, submit } = useSettingsForm(onClose);
+  const { pending, submit } = useSettingsForm(onClose);
   const fields = [
     { key: "name", label: "Name", placeholder: "e.g. Tan Mei Lin", maxLength: LIMITS.NAME, required: true, type: "text" },
     { key: "relation", label: "Who they are", placeholder: "e.g. Sister", maxLength: LIMITS.NOTE, required: false, type: "text" },
@@ -251,7 +243,7 @@ export function TrustedContactForm({ variant, onClose }: FormProps) {
   }
 
   return (
-    <FormShell onSubmit={save} onClose={onClose} pending={pending} error={error}>
+    <FormShell onSubmit={save} onClose={onClose} pending={pending}>
       {fields.map((f) => (
         <Field key={f.key} id={`${id}-${f.key}`} label={f.label} optional={!f.required}>
           <Input
@@ -271,6 +263,39 @@ export function TrustedContactForm({ variant, onClose }: FormProps) {
   );
 }
 
+/** Money Lock: how much of the main account can't be sent by transfer. */
+export function MoneyLockForm({ variant, onClose }: FormProps) {
+  const id = useId();
+  const currency = useCurrency();
+  const accountName = useSettingsStore((s) => s.settings.accountName);
+  const [amount, setAmount] = useState(() => fromSgd(useSettingsStore.getState().settings.lockedSgd, currency));
+  const { pending, submit } = useSettingsForm(onClose);
+
+  function save() {
+    const lockedSgd = toSgd(amount, currency);
+    if (lockedSgd === null) toast.error("Enter an amount of 0 or more.");
+    else void submit({ lockedSgd });
+  }
+
+  return (
+    <FormShell onSubmit={save} onClose={onClose} pending={pending} submitLabel="Lock">
+      <Field id={id} label={`Amount to lock in ${accountName} (${currency.code})`}>
+        <Input
+          id={id}
+          variant={variant}
+          type="number"
+          inputMode="decimal"
+          required
+          min={0}
+          step={currency.decimals ? 0.01 : 1}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      </Field>
+    </FormShell>
+  );
+}
+
 export function SavingsGoalForm({ variant, onClose }: FormProps) {
   const id = useId();
   const currency = useCurrency();
@@ -282,20 +307,20 @@ export function SavingsGoalForm({ variant, onClose }: FormProps) {
       deadline: goal?.deadline ?? "",
     };
   });
-  const { pending, error, setError, submit } = useSettingsForm(onClose);
+  const { pending, submit } = useSettingsForm(onClose);
   const step = currency.decimals ? 0.01 : 1;
 
   function save() {
     const targetSgd = toSgd(values.target, currency, { positive: true });
     const savedSgd = toSgd(values.saved, currency);
-    if (targetSgd === null) setError("Enter a target above 0.");
-    else if (savedSgd === null) setError("Enter how much you've saved, 0 or more.");
-    else if (!values.deadline) setError("Pick a date for the goal.");
+    if (targetSgd === null) toast.error("Enter a target above 0.");
+    else if (savedSgd === null) toast.error("Enter how much you've saved, 0 or more.");
+    else if (!values.deadline) toast.error("Pick a date for the goal.");
     else void submit({ savingsGoal: { targetSgd, savedSgd, deadline: values.deadline } });
   }
 
   return (
-    <FormShell onSubmit={save} onClose={onClose} pending={pending} error={error}>
+    <FormShell onSubmit={save} onClose={onClose} pending={pending}>
       <Field id={`${id}-target`} label={`Target (${currency.code})`}>
         <Input
           id={`${id}-target`}

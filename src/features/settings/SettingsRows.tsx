@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, type ComponentType, type ReactNode } from "react";
+import toast from "react-hot-toast";
 import { Avatar, Money, ProgressBar } from "@/components/ui";
 import { useSettings, useSettingsStore } from "@/store";
-import { LIMITS } from "@/constants";
+import { COOL_OFF_HOURS, LIMITS } from "@/constants";
 import type { Account, UpdateSettings } from "@/types/settings";
-import { cn } from "@/utils";
-import { errorMessage, SaveError } from "./SettingsControls";
-import { AccountNameForm, AddAccountForm, AddMoneyForm, BalanceForm, SavingsGoalForm, TrustedContactForm } from "./SettingsForms";
+import { cn, errorMessage } from "@/utils";
+import { AccountNameForm, AddAccountForm, AddMoneyForm, BalanceForm, MoneyLockForm, SavingsGoalForm, TrustedContactForm } from "./SettingsForms";
 
 type Variant = "mobile" | "desktop";
 type EditorForm = ComponentType<{ variant: "bold" | "soft"; onClose: () => void }>;
@@ -30,24 +30,17 @@ function initials(name: string) {
 /** Edit state for one row, plus a confirmed remove that clears the field. */
 function useEditor() {
   const [editing, setEditing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function remove(body: UpdateSettings, question: string) {
     if (!window.confirm(question)) return;
-    setError(null);
     try {
       await useSettingsStore.getState().save(body);
     } catch (err) {
-      setError(errorMessage(err));
+      toast.error(errorMessage(err));
     }
   }
 
-  function open() {
-    setError(null);
-    setEditing(true);
-  }
-
-  return { editing, open, close: () => setEditing(false), error, remove };
+  return { editing, open: () => setEditing(true), close: () => setEditing(false), remove };
 }
 
 type RowProps = {
@@ -60,10 +53,9 @@ type RowProps = {
   actions: ReactNode;
   editing: boolean;
   form: ReactNode;
-  error: string | null;
 };
 
-function EditableRow({ variant, label, value, detail, avatar, actions, editing, form, error }: RowProps) {
+function EditableRow({ variant, label, value, detail, avatar, actions, editing, form }: RowProps) {
   const mobile = variant === "mobile";
   return (
     <div className="flex flex-col border-b border-line">
@@ -77,7 +69,6 @@ function EditableRow({ variant, label, value, detail, avatar, actions, editing, 
         {!editing && <span className="flex flex-none items-center gap-[16px]">{actions}</span>}
       </div>
       {editing && form}
-      <SaveError error={error} className="pb-[10px]" />
     </div>
   );
 }
@@ -114,7 +105,6 @@ function SimpleRow({ variant, label, value, Form, editLabel = "Edit" }: SimpleRo
       actions={<Actions ready={ready} editLabel={editLabel} onEdit={editor.open} />}
       editing={editor.editing}
       form={<Form variant={variant === "mobile" ? "bold" : "soft"} onClose={editor.close} />}
-      error={editor.error}
     />
   );
 }
@@ -139,7 +129,6 @@ function ExtraAccountRow({ variant, account }: { variant: Variant; account: Acco
       }
       editing={false}
       form={null}
-      error={editor.error}
     />
   );
 }
@@ -185,7 +174,6 @@ export function TrustedContactRow({ variant }: { variant: Variant }) {
       }
       editing={editor.editing}
       form={<TrustedContactForm variant={variant === "mobile" ? "bold" : "soft"} onClose={editor.close} />}
-      error={editor.error}
     />
   );
 
@@ -195,10 +183,36 @@ export function TrustedContactRow({ variant }: { variant: Variant }) {
       {row}
       <p className="m-0 pt-[8px] text-[13px] leading-[1.45] font-medium text-muted">
         {contact
-          ? `When Auntie blocks a payment, she can loop ${contact.name} in before you override.`
-          : "Add someone you trust, and when Auntie blocks a payment she can loop them in before you override."}
+          ? `When Auntie warns about or blocks a payment, she logs an alert for ${contact.name}. A warned payment cools off for ${COOL_OFF_HOURS} hours before you can send it anyway.`
+          : `Add someone you trust, and when Auntie warns about or blocks a payment she logs an alert for them. A warned payment cools off for ${COOL_OFF_HOURS} hours either way.`}
       </p>
     </>
+  );
+}
+
+/** Money Lock on the main account: the amount locked, or Off. */
+export function MoneyLockRow({ variant }: { variant: Variant }) {
+  const { settings, status } = useSettings();
+  const editor = useEditor();
+  const ready = status === "ready";
+  const locked = ready ? settings.lockedSgd : 0;
+  return (
+    <EditableRow
+      variant={variant}
+      label="Money Lock"
+      value={!ready ? "…" : locked > 0 ? <><Money sgd={locked} /> locked</> : "Off"}
+      detail={`Locked money in ${settings.accountName} can't be sent by transfer.`}
+      actions={
+        <Actions
+          ready={ready}
+          editLabel={locked > 0 ? "Change" : "Lock"}
+          onEdit={editor.open}
+          onRemove={locked > 0 ? () => void editor.remove({ lockedSgd: 0 }, "Unlock all your money? It can then be sent by transfer.") : undefined}
+        />
+      }
+      editing={editor.editing}
+      form={<MoneyLockForm variant={variant === "mobile" ? "bold" : "soft"} onClose={editor.close} />}
+    />
   );
 }
 
@@ -245,7 +259,6 @@ export function SavingsGoalRow({ variant }: { variant: Variant }) {
         actions={actions}
         editing={editor.editing}
         form={form}
-        error={editor.error}
       />
     );
   }
@@ -282,7 +295,6 @@ export function SavingsGoalRow({ variant }: { variant: Variant }) {
           <span className="text-[13px] font-medium text-muted">Add a target and a date, and Auntie will track how close you are.</span>
         </>
       )}
-      <SaveError error={editor.error} />
     </>
   );
 }

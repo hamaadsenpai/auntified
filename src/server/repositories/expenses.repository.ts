@@ -18,6 +18,7 @@ function toExpense(snap: DocumentSnapshot): Expense {
     amountSgd: data.amountSgd,
     spentAt: iso(data.spentAt),
     createdAt: iso(data.createdAt),
+    ...(data.recurring === true && { recurring: true }),
   };
 }
 
@@ -61,4 +62,33 @@ export async function deleteExpense(uid: string, id: string): Promise<boolean> {
     tx.delete(ref);
     return true;
   });
+}
+
+/**
+ * Adds expenses read from a bank statement in one batch. Skips any that match an expense already
+ * logged (same name, amount and day), so importing the same statement twice adds nothing.
+ */
+export async function addStatementExpenses(uid: string, items: (Required<CreateExpense> & { recurring: boolean })[]) {
+  const key = (name: string, amountSgd: number, spentAt: string) => `${name.trim().toLowerCase()}|${amountSgd.toFixed(2)}|${spentAt.slice(0, 10)}`;
+  const seen = new Set((await listExpenses(uid)).map((e) => key(e.name, e.amountSgd, e.spentAt)));
+  const fresh = items.filter((e) => {
+    const k = key(e.name, e.amountSgd, new Date(e.spentAt).toISOString());
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  // Firestore batches cap at 500 writes; the parser caps a statement well under that.
+  const batch = db.batch();
+  for (const e of fresh) {
+    batch.set(expenses(uid).doc(), {
+      name: e.name,
+      category: e.category,
+      amountSgd: e.amountSgd,
+      spentAt: Timestamp.fromDate(new Date(e.spentAt)),
+      createdAt: FieldValue.serverTimestamp(),
+      ...(e.recurring && { recurring: true }),
+    });
+  }
+  await batch.commit();
+  return { added: fresh.length, skipped: items.length - fresh.length };
 }

@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { BackHeader } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
-import { Button, Money, NudgeCard, ProgressBar } from "@/components/ui";
+import { AuntieBubble, Button, Money, ProgressBar } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { ExpenseList } from "./ExpenseList";
+import { SuggestedCuts } from "./SuggestedCuts";
+import { useAuntieRoast } from "./useAuntieRoast";
 import { useRoast } from "./useRoast";
 import { formatDay } from "./week";
 
 export function RoastMobile() {
-  const { ready, label, totalSgd, categories, biggest, goal, goalLoaded } = useRoast();
+  const { status, ready, label, week, totalSgd, categories, biggest, goal, goalLoaded } = useRoast();
+  const auntie = useAuntieRoast();
   return (
     <>
       <BackHeader backHref={ROUTES.HOME} title="Weekly roast" subtitle={label} />
@@ -23,14 +26,21 @@ export function RoastMobile() {
             </div>
             <div className="flex flex-col items-end gap-[2px]">
               <span className="rounded-full border-[2.5px] border-ink bg-white px-[11px] py-[5px] font-display text-[13px] font-semibold whitespace-nowrap">
-                aiyoh...
+                {auntie.badge ?? "aiyoh..."}
               </span>
               <AuntieBao mood="meh" width={72} height={67} />
             </div>
           </div>
         </div>
-        {ready && categories.length === 0 && (
+        {status === "error" ? null : ready && categories.length === 0 ? (
           <p className="m-0 font-display text-[16px] leading-[1.4] font-medium text-muted">Log what you spend and Auntie will roast it here.</p>
+        ) : (
+          <AuntieBubble className="text-[15px]">
+            {auntie.roast ??
+              (ready && auntie.status !== "loading" && biggest
+                ? `${week.length} ${week.length === 1 ? "spend" : "spends"} across ${categories.length} ${categories.length === 1 ? "category" : "categories"} this week. ${biggest.category} leaked the most.`
+                : "Let me look at your week…")}
+          </AuntieBubble>
         )}
         {categories.length > 0 && (
           <ul className="m-0 flex list-none flex-col border-t border-line p-0">
@@ -73,12 +83,7 @@ export function RoastMobile() {
             </div>
           )
         )}
-        {biggest && (
-          <NudgeCard>
-            {biggest.category} is your biggest leak: <Money sgd={biggest.totalSgd} /> over {biggest.count}{" "}
-            {biggest.count === 1 ? "spend" : "spends"}. Halve it and keep <Money sgd={biggest.totalSgd / 2} /> back.
-          </NudgeCard>
-        )}
+        <SuggestedCuts />
       </main>
       <div className="flex flex-none flex-col gap-[10px] border-t border-line px-[20px] pt-[12px] pb-[24px]">
         <Button variant="secondary" href={ROUTES.ASK}>

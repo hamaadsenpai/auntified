@@ -46,14 +46,6 @@ export const STATUS_TAG: Record<TransferStatus, { tag: TagVariant; label: string
   expired: { tag: "outline", label: "Expired" },
 };
 
-/** Expenses spent in the window [now - toDays, now - fromDays). */
-export function spentBetween(expenses: Expense[], now: number, fromDays: number, toDays: number) {
-  return expenses.filter((e) => {
-    const age = now - new Date(e.spentAt).getTime();
-    return age >= fromDays * DAY_MS && age < toDays * DAY_MS;
-  });
-}
-
 export const sumSgd = (items: { amountSgd: number }[]) => items.reduce((sum, i) => sum + i.amountSgd, 0);
 
 /** Totals per category, biggest first. */

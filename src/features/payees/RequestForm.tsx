@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import { Button, Input } from "@/components/ui";
 import { LIMITS } from "@/constants";
 import { useBillsStore, useCurrency } from "@/store";
-import type { ApiFailure } from "@/types/api";
+import { errorMessage } from "@/utils";
 import { formatCurrency } from "@/utils/format";
 
 type RequestFormProps = {
@@ -23,22 +24,20 @@ export function RequestForm({ payeeId, name, onDone, idPrefix = "request" }: Req
   const [text, setText] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     // Typed in the user's currency, like the pay amount; bills are stored in SGD to the cent.
     const amountSgd = Math.round((Number(amount) / currency.rate) * 100) / 100;
     const what = title.trim();
-    if (!(amountSgd > 0)) return setError("Enter an amount more than zero.");
-    if (!what) return setError("Say what the money is for.");
+    if (!(amountSgd > 0)) return toast.error("Enter an amount more than zero.");
+    if (!what) return toast.error("Say what the money is for.");
     setPending(true);
-    setError(null);
     try {
       await useBillsStore.getState().create({ kind: "request", title: what, totalSgd: amountSgd, paidBy: "me", shares: [{ who: payeeId, amountSgd }] });
       setText(`Hi ${name}, could you send me ${formatCurrency(Number(amount), currency)} for ${what}? Thanks!`);
     } catch (err) {
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
+      toast.error(errorMessage(err));
     } finally {
       setPending(false);
     }
@@ -46,7 +45,6 @@ export function RequestForm({ payeeId, name, onDone, idPrefix = "request" }: Req
 
   async function send() {
     if (!text) return;
-    setError(null);
     if (navigator.share) {
       try {
         return await navigator.share({ text });
@@ -58,21 +56,14 @@ export function RequestForm({ payeeId, name, onDone, idPrefix = "request" }: Req
       await navigator.clipboard.writeText(text);
       setCopied(true);
     } catch {
-      setError("Could not copy the message. Try again.");
+      toast.error("Could not copy the message. Try again.");
     }
   }
-
-  const errorBox = error && (
-    <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-      {error}
-    </p>
-  );
 
   if (text) {
     return (
       <div className="flex flex-col gap-[16px]">
         <p className="m-0 rounded-[14px] border border-line-strong px-[14px] py-[12px] text-[15px] font-medium">{text}</p>
-        {errorBox}
         <div className="flex gap-[12px]">
           <Button variant="secondary" className="flex-1" onClick={onDone}>
             Done
@@ -120,7 +111,6 @@ export function RequestForm({ payeeId, name, onDone, idPrefix = "request" }: Req
           onChange={(e) => setTitle(e.target.value)}
         />
       </div>
-      {errorBox}
       <div className="flex gap-[12px]">
         <Button variant="secondary" className="flex-1" disabled={pending} onClick={onDone}>
           Cancel

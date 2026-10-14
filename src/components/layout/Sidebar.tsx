@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { AuntieBao } from "@/components/mascot/AuntieBao";
 import { cn } from "@/utils";
 import { NAV_ITEMS, type NavKey } from "./navItems";
@@ -13,11 +13,12 @@ function activeKey(pathname: string): NavKey | null {
   if (pathname.startsWith("/payees")) return "payees";
   if (pathname.startsWith("/pay")) return "pay";
   if (pathname.startsWith("/ledger")) return "ledger";
-  if (pathname.startsWith("/settings") || pathname.startsWith("/patterns") || pathname.startsWith("/demo")) return "settings";
+  if (pathname.startsWith("/scan")) return "scan";
+  if (["/settings", "/patterns", "/demo", "/analyst"].some((p) => pathname.startsWith(p))) return "settings";
   return null;
 }
 
-function SidebarView({ active }: { active: NavKey | null }) {
+function SidebarView({ active, footer }: { active: NavKey | null; footer?: ReactNode }) {
   return (
     <aside className="hidden h-dvh w-[240px] flex-none flex-col gap-[32px] border-r border-line bg-white px-[16px] pt-[28px] pb-[24px] lg:flex">
       <span className="flex items-center gap-[10px] px-[8px]">
@@ -45,22 +46,26 @@ function SidebarView({ active }: { active: NavKey | null }) {
           );
         })}
       </nav>
-      <p className="m-0 mt-auto px-[12px] text-[12px] leading-[1.45] font-medium text-muted">
-        An assistant, not a financial adviser. Demo data, no bank connected.
-      </p>
+      <div className="mt-auto flex flex-col gap-[12px]">
+        {footer}
+        <p className="m-0 px-[12px] text-[12px] leading-[1.45] font-medium text-muted">
+          An assistant, not a financial adviser. Demo data, no bank connected.
+        </p>
+      </div>
     </aside>
   );
 }
 
-function SidebarWithPath() {
+function SidebarWithPath({ footer }: { footer?: ReactNode }) {
   const pathname = usePathname();
-  return <SidebarView active={activeKey(pathname)} />;
+  return <SidebarView active={activeKey(pathname)} footer={footer} />;
 }
 
-export function Sidebar() {
+/** `footer` sits above the disclaimer; the app layout passes the logout button (components can't import features). */
+export function Sidebar({ footer }: { footer?: ReactNode }) {
   return (
-    <Suspense fallback={<SidebarView active={null} />}>
-      <SidebarWithPath />
+    <Suspense fallback={<SidebarView active={null} footer={footer} />}>
+      <SidebarWithPath footer={footer} />
     </Suspense>
   );
 }

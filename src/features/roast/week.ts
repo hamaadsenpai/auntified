@@ -75,6 +75,27 @@ export function byCategory(expenses: Expense[]): CategoryTotal[] {
   return [...totals.values()].sort((a, b) => b.totalSgd - a.totalSgd);
 }
 
+/** "Normal" is the average week over up to this many weeks before this one. */
+export const NORMAL_WEEKS = 12;
+
+/**
+ * Average weekly spend, per category and in total, over the NORMAL_WEEKS before `start` (this week's start).
+ * Divides by the weeks of history actually there (whole weeks back to the oldest expense, 1 to NORMAL_WEEKS),
+ * so a short history isn't diluted by weeks the user wasn't logging yet. Home and Patterns both use this.
+ */
+export function weeklyNormal(expenses: Expense[], start: Date) {
+  const week = 7 * DAY_MS;
+  const past = expenses.filter((e) => inRange(e, new Date(start.getTime() - NORMAL_WEEKS * week), start));
+  const oldest = expenses.reduce((min, e) => Math.min(min, Date.parse(e.spentAt)), Infinity);
+  const weeks = Math.min(NORMAL_WEEKS, Math.max(1, Math.ceil((start.getTime() - oldest) / week)));
+  return {
+    perCategory: new Map(byCategory(past).map((c) => [c.category, c.totalSgd / weeks])),
+    totalSgd: sumSgd(past) / weeks,
+    hasHistory: past.length > 0,
+    weeks,
+  };
+}
+
 /** Progress towards a savings goal. `daysLeft` counts calendar days to the "YYYY-MM-DD" deadline. */
 export function goalProgress(goal: SavingsGoal, now: Date) {
   const [y, m, d] = goal.deadline.split("-").map(Number);

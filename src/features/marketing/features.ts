@@ -58,10 +58,4 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
     points: ["33 currencies across Asia and Oceania", "English, Singlish, Manglish, Taglish or Hinglish", "Roast or Gentle tone"],
     href: ROUTES.SETTINGS,
   },
-  {
-    key: "plugin",
-    title: "Bank plug-in",
-    summary: "Banks can call Auntie before a transfer through a pre authorisation webhook.",
-    points: ["One webhook, v1", "Pass, warn or block response", "Falls back to the bank's own rules on timeout"],
-  },
 ];

@@ -33,6 +33,7 @@ const schema = z
       })
       .strict()
       .nullable(),
+    lockedSgd: amount,
   })
   .partial()
   .strict()

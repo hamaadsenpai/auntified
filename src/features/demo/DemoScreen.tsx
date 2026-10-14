@@ -7,7 +7,7 @@ import { AuntieBao } from "@/components/mascot";
 import { Money } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { DEMO_FIRE } from "@/constants/demo";
-import { ActionButton, DemoBanner, DemoMessage, DemoStats, JumpSelect, ResetControl, resetHint } from "./DemoControls";
+import { ActionButton, DemoBanner, DemoStats, FireSmsButton, JumpSelect, ResetControl, resetHint } from "./DemoControls";
 import { useDemo } from "./DemoProvider";
 
 export function DemoScreen() {
@@ -41,6 +41,13 @@ export function DemoScreen() {
             </span>
             <ActionButton action="fire">Fire</ActionButton>
           </div>
+          <div className="flex items-center justify-between gap-[12px] border-b border-line py-[14px]">
+            <span className="flex flex-col gap-[2px]">
+              <span className="text-[16px] font-semibold">Fire a scam text</span>
+              <span className="text-[13px] font-medium text-muted">A fake bank SMS, into the scam scanner</span>
+            </span>
+            <FireSmsButton />
+          </div>
           <div className="flex flex-col gap-[10px] border-b border-line py-[14px]">
             <span className="flex flex-col gap-[2px]">
               <label htmlFor="jump" className="text-[16px] font-semibold">
@@ -61,7 +68,6 @@ export function DemoScreen() {
             <ResetControl />
           </div>
         </div>
-        <DemoMessage />
       </main>
     </Screen>
   );

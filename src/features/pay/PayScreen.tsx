@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { BottomNav, Screen } from "@/components/layout";
 import { Avatar, Button, Input, Tag } from "@/components/ui";
 import { LIMITS, ROUTES, withTransfer } from "@/constants";
@@ -11,6 +12,7 @@ import { usePayDraftStore } from "@/store/pay-draft.store";
 import type { ApiFailure } from "@/types/api";
 import type { CreatePayee, Payee } from "@/types/payee";
 import type { CreateTransfer, Transfer } from "@/types/transfer";
+import { errorMessage } from "@/utils";
 import { accountOf } from "@/utils/accounts";
 import { AmountPad } from "./AmountPad";
 import { FromAccountSelect } from "./FromAccountSelect";
@@ -61,14 +63,12 @@ async function saveDraftTransfer(transferId: string | null, body: CreateTransfer
 export function useSubmitDraft() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function submit(route: string) {
     const { transferId, payeeId, amountSgd, reference, fromAccountId } = usePayDraftStore.getState();
-    if (!payeeId) return setError("Choose who you are paying first.");
-    if (!(amountSgd > 0)) return setError("Enter an amount more than zero.");
+    if (!payeeId) return toast.error("Choose who you are paying first.");
+    if (!(amountSgd > 0)) return toast.error("Enter an amount more than zero.");
     setPending(true);
-    setError(null);
     try {
       // The picked account, or the main one if it was removed since.
       const from = accountOf(useSettingsStore.getState().settings, fromAccountId).id;
@@ -76,7 +76,7 @@ export function useSubmitDraft() {
       usePayDraftStore.getState().setTransferId(transfer.id);
       router.push(withTransfer(route, transfer.id));
     } catch (err) {
-      setError((err as ApiFailure["error"]).message);
+      toast.error(errorMessage(err));
       setPending(false);
     }
   }
@@ -86,7 +86,7 @@ export function useSubmitDraft() {
     router.push(ROUTES.HOME);
   }
 
-  return { submit, cancel, pending, error };
+  return { submit, cancel, pending };
 }
 
 export function PayScreen() {
@@ -212,11 +212,6 @@ export function PayScreen() {
           />
         </div>
         </AmountPad>
-        {draft.error && (
-          <p role="alert" className="m-0 text-[14px] font-semibold text-brick">
-            {draft.error}
-          </p>
-        )}
         <Button onClick={() => void draft.submit(ROUTES.PAY_REVIEW)} disabled={draft.pending} className="disabled:opacity-50">
           {draft.pending ? "Creating transfer…" : "Review transfer"}
         </Button>

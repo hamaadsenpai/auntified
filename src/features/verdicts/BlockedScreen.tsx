@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import { Screen } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
 import { Avatar, Button, Card, FIELD_BASE, FIELD_VARIANTS, Money } from "@/components/ui";
 import { LIMITS, ROUTES, withTransfer } from "@/constants";
 import { useSettings, useTransfersStore } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { Transfer } from "@/types/transfer";
-import { cn } from "@/utils";
+import { cn, errorMessage } from "@/utils";
+import { ContactAlertNote, RiskBreakdown } from "./RiskBreakdown";
 import { formatWhen, TransferFallback, useTransferParam } from "./transfer-param";
 import { PANEL, VerdictDesktop } from "./VerdictDesktop";
 
@@ -26,11 +27,11 @@ export function BlockedScreen() {
 
   if (!transfer) return <TransferFallback missing={missing} />;
 
-  const [headline, ...otherReasons] = transfer.reasons;
+  const headline = transfer.reasons[0];
 
   return (
     <>
-      <BlockedDesktop transfer={transfer} headline={headline} otherReasons={otherReasons} />
+      <BlockedDesktop transfer={transfer} headline={headline} />
       <Screen className="lg:hidden">
         <header role="alert" className="flex flex-none flex-col gap-[8px] bg-brick px-[20px] pt-[24px] pb-[22px] text-white">
           <div className="flex items-baseline justify-between gap-[12px]">
@@ -48,7 +49,8 @@ export function BlockedScreen() {
           <p className="m-0 font-display text-[15px] leading-[1.4] font-medium">{headline ?? "That is how scams look."}</p>
         </header>
         <main className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-y-auto px-[20px] pt-[18px] pb-[20px] *:shrink-0">
-          <Spotted transfer={transfer} otherReasons={otherReasons} className="rounded-[16px] border-[1.5px] border-brick px-[14px] py-[12px]" />
+          <Spotted transfer={transfer} className="rounded-[16px] border-[1.5px] border-brick px-[14px] py-[12px]" />
+          <ContactAlertNote transfer={transfer} />
           <ContactCard className="flex flex-col gap-[12px] rounded-[22px] px-[16px] py-[14px]" />
           <Appeal id="appeal" transfer={transfer} />
           <Link
@@ -69,7 +71,7 @@ export function BlockedScreen() {
 
 const DISCLAIMER = "Auntified is an assistant, not a financial adviser.";
 
-function BlockedDesktop({ transfer, headline, otherReasons }: { transfer: Transfer; headline?: string; otherReasons: string[] }) {
+function BlockedDesktop({ transfer, headline }: { transfer: Transfer; headline?: string }) {
   return (
     <VerdictDesktop
       back={{ href: ROUTES.HOME, label: "Back to home" }}
@@ -93,7 +95,8 @@ function BlockedDesktop({ transfer, headline, otherReasons }: { transfer: Transf
               </span>
             )}
           </div>
-          <Spotted transfer={transfer} otherReasons={otherReasons} className={`${PANEL} gap-[8px]`} />
+          <Spotted transfer={transfer} className={`${PANEL} gap-[8px]`} />
+          <ContactAlertNote transfer={transfer} />
           <Link
             href={withTransfer(ROUTES.PAY_BLOCKED_WHY, transfer.id)}
             className="flex min-h-[44px] items-center self-start text-[15px] font-semibold text-teal"
@@ -116,26 +119,12 @@ function BlockedDesktop({ transfer, headline, otherReasons }: { transfer: Transf
   );
 }
 
-/** The flags and lesser reasons behind the block. Nothing when there are none. */
-function Spotted({ transfer, otherReasons, className }: { transfer: Transfer; otherReasons: string[]; className: string }) {
-  if (transfer.flags.length === 0 && otherReasons.length === 0) return null;
+/** Each reason behind the block with its points. */
+function Spotted({ transfer, className }: { transfer: Transfer; className: string }) {
   return (
     <div className={cn("flex flex-col gap-[6px]", className)}>
       <span className="text-[12px] font-medium text-muted">What she spotted</span>
-      {transfer.flags.length > 0 && (
-        <span className="flex flex-wrap gap-[6px]">
-          {transfer.flags.map((flag) => (
-            <span key={flag} className="rounded-full bg-brick px-[11px] py-[5px] text-[14px] font-bold text-white">
-              {flag}
-            </span>
-          ))}
-        </span>
-      )}
-      {otherReasons.map((reason) => (
-        <span key={reason} className="text-[13px] font-medium text-muted">
-          {reason}
-        </span>
-      ))}
+      <RiskBreakdown transfer={transfer} />
     </div>
   );
 }
@@ -179,18 +168,16 @@ function Appeal({ id, transfer }: { id: string; transfer: Transfer }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const appealReason = reason.trim();
-    if (!appealReason) return setError("Tell Auntie why this payment is safe.");
+    if (!appealReason) return toast.error("Tell Auntie why this payment is safe.");
     setPending(true);
-    setError(null);
     try {
       await useTransfersStore.getState().update(transfer.id, { appealReason });
     } catch (err) {
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
+      toast.error(errorMessage(err));
     } finally {
       setPending(false);
     }
@@ -229,11 +216,6 @@ function Appeal({ id, transfer }: { id: string; transfer: Transfer }) {
         className={cn(FIELD_BASE, FIELD_VARIANTS.soft, "h-auto cursor-text resize-none px-[14px] py-[12px]")}
       />
       <p className="m-0 text-[13px] font-medium text-muted">Appealing doesn&apos;t send the money. The payment stays stopped.</p>
-      {error && (
-        <p role="alert" className="m-0 text-[14px] font-semibold text-brick">
-          {error}
-        </p>
-      )}
       <div className="flex gap-[10px]">
         <Button type="submit" className="flex-1 disabled:opacity-60" disabled={pending}>
           {pending ? "Sending…" : "Send appeal"}

@@ -190,6 +190,7 @@ export async function seedDemo(uid: string): Promise<DemoState> {
       reference: t.reference,
       status: t.status,
       flags: rules.flags,
+      signals: rules.signals,
       rulesScore: rules.score,
       modelScore: t.modelScore,
       score: Math.min(100, rules.score + t.modelScore),
@@ -270,7 +271,7 @@ export async function jumpClock(uid: string, hours: number): Promise<DemoState> 
         const data = doc.data();
         const changes: DocumentData = {};
         for (const [key, value] of Object.entries(data)) if (value instanceof Timestamp) changes[key] = back(value);
-        if (data.appeal?.at instanceof Timestamp) changes["appeal.at"] = back(data.appeal.at);
+        for (const key of ["appeal", "contactAlert", "review"]) if (data[key]?.at instanceof Timestamp) changes[`${key}.at`] = back(data[key].at);
         // Bills keep settledAt inside the shares array, which a dotted path cannot reach.
         if (Array.isArray(data.shares) && data.shares.some((s) => s?.settledAt instanceof Timestamp))
           changes.shares = data.shares.map((s: DocumentData) => (s?.settledAt instanceof Timestamp ? { ...s, settledAt: back(s.settledAt) } : s));

@@ -64,11 +64,6 @@ export function LedgerDesktop() {
             ))}
           </div>
         </div>
-        {ledger.deleteError && (
-          <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-            {ledger.deleteError}
-          </p>
-        )}
         {!ready ? (
           <LedgerStatus status={ledger.status === "error" ? "error" : "loading"} error={ledger.error} retry={ledger.retry} />
         ) : entries.length === 0 ? (

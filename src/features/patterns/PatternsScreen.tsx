@@ -2,7 +2,7 @@
 
 import { BackHeader, Screen } from "@/components/layout";
 import { ROUTES } from "@/constants";
-import { AmountCards, HotWeek, UsualHours, usePatterns, WeekVsNormal } from "./PatternsParts";
+import { AmountCards, CoverageCheck, HotWeek, RecurringCharges, UsualHours, usePatterns, WeekVsNormal } from "./PatternsParts";
 
 export function PatternsScreen() {
   const p = usePatterns();
@@ -14,6 +14,8 @@ export function PatternsScreen() {
         <UsualHours p={p} />
         <WeekVsNormal p={p} />
         <HotWeek p={p} />
+        <RecurringCharges p={p} />
+        <CoverageCheck p={p} />
       </main>
     </Screen>
   );

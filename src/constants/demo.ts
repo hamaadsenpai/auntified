@@ -7,3 +7,7 @@ export const DEMO_JUMPS = [
   { hours: 24, label: "Plus 24 hours" },
   { hours: 168, label: "Plus 7 days" },
 ] as const;
+
+/** The scam text Fire drops into the message scanner. */
+export const DEMO_SCAM_SMS =
+  "DBS: Your account has been temporarily suspended due to unusual activity. Verify your identity within 24 hours to avoid permanent closure: https://dbs-secure-verify.top/login";

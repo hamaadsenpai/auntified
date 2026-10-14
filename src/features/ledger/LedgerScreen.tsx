@@ -26,11 +26,6 @@ export function LedgerScreen() {
           </Chip>
         ))}
       </div>
-      {ledger.deleteError && (
-        <p role="alert" className="mx-[20px] mb-[8px] rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-          {ledger.deleteError}
-        </p>
-      )}
       <ol className="m-0 flex min-h-0 flex-1 list-none flex-col overflow-y-auto border-t border-line px-[20px] *:shrink-0">
         {ledger.status !== "ready" ? (
           <li className="py-[16px]">

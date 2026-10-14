@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { Button, Money, Tag, type TagVariant } from "@/components/ui";
 import { ROUTES, withTransfer } from "@/constants";
 import { formatWhen } from "@/features/verdicts";
 import { payeeService } from "@/services/payee.service";
 import { useBills, usePayees, usePayeesStore, useTransfers } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { Transfer, TransferStatus } from "@/types/transfer";
-import { cn } from "@/utils";
+import { cn, errorMessage } from "@/utils";
 import { balances } from "./balances";
 import { settleUp } from "./settle";
 
@@ -39,8 +39,6 @@ export const initials = (name: string) =>
     .map((w) => w[0]!.toUpperCase())
     .join("");
 
-const errorMessage = (err: unknown) => (err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.";
-
 /** One payee, its past attempts, what you owe each other and the edit, request, settle, report and remove actions. Shared by the mobile and desktop screens. */
 export function usePayee(id: string) {
   const router = useRouter();
@@ -52,7 +50,6 @@ export function usePayee(id: string) {
   const [editing, setEditing] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [pending, setPending] = useState<"report" | "remove" | "settle" | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   // Not in the loaded list (or the list failed): fetch just this payee.
   const listSettled = payeesStatus === "ready" || payeesStatus === "error";
@@ -69,7 +66,7 @@ export function usePayee(id: string) {
         { term: "First seen", value: formatWhen(payee.createdAt, ", ") },
         { term: "Transfers", value: `${payee.transferCount} completed` },
         { term: "Total sent", value: <Money sgd={payee.totalSentSgd} /> },
-        { term: "Category", value: payee.note || "—" },
+        { term: "Note", value: payee.note || "—" },
       ]
     : [];
 
@@ -85,33 +82,30 @@ export function usePayee(id: string) {
 
   function settle() {
     setPending("settle");
-    setError(null);
     settleUp("me", id)
-      .catch((err) => setError(errorMessage(err)))
+      .catch((err) => toast.error(errorMessage(err)))
       .finally(() => setPending(null));
   }
 
   function toggleReport() {
     if (!payee) return;
     setPending("report");
-    setError(null);
     usePayeesStore
       .getState()
       .update(id, { reported: !payee.reported })
-      .catch((err) => setError(errorMessage(err)))
+      .catch((err) => toast.error(errorMessage(err)))
       .finally(() => setPending(null));
   }
 
   function remove() {
     if (!payee || !window.confirm(`Remove ${payee.name}? Past payments stay in your ledger.`)) return;
     setPending("remove");
-    setError(null);
     usePayeesStore
       .getState()
       .remove(id)
       .then(() => router.push(ROUTES.PAYEES))
       .catch((err) => {
-        setError(errorMessage(err));
+        toast.error(errorMessage(err));
         setPending(null);
       });
   }
@@ -137,7 +131,6 @@ export function usePayee(id: string) {
     openShares,
     settle,
     pending,
-    error,
     toggleReport,
     remove,
     save,
@@ -244,14 +237,5 @@ export function PayeeBalance({ m, variant = "mobile" }: { m: PayeeModel; variant
         </div>
       ))}
     </section>
-  );
-}
-
-export function PayeeError({ error }: { error: string | null }) {
-  if (!error) return null;
-  return (
-    <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-      {error}
-    </p>
   );
 }

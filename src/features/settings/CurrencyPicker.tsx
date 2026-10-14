@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import toast from "react-hot-toast";
 import { CheckIcon, ChevronDownIcon, SearchIcon } from "@/components/icons";
 import { FIELD_BASE, FIELD_VARIANTS, type SelectVariant } from "@/components/ui";
 import { CURRENCIES, CURRENCY_REGIONS, type Currency } from "@/constants/currencies";
 import { useCurrency, useCurrencyStore } from "@/store";
-import { cn } from "@/utils";
+import { cn, errorMessage } from "@/utils";
 
 function matches(c: Currency, q: string) {
   return [c.code, c.name, c.country, c.symbol.trim()].some((field) => field.toLowerCase().includes(q));
@@ -83,7 +84,9 @@ export function CurrencyPicker({ id, variant = "bold", className }: CurrencyPick
 
   function choose(c: Currency) {
     // Refresh re-reads the profile on the server, so the "currency not set" banner goes once it is saved.
-    void saveCurrency(c.code).then(() => router.refresh());
+    saveCurrency(c.code)
+      .then(() => router.refresh())
+      .catch((err: unknown) => toast.error(errorMessage(err)));
     close();
   }
 

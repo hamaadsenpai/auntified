@@ -16,4 +16,6 @@ export const env = {
   GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-3.8-flash",
   // Used when the main model is overloaded (503/429).
   GEMINI_FALLBACK_MODEL: process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash",
+  // Comma-separated emails allowed into the bank analyst queue outside demo mode.
+  ADMIN_EMAILS: (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
 };

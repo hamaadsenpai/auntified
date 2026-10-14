@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
+import toast from "react-hot-toast";
 import { Avatar, Money, Tag } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { useBills, useBillsStore, usePayees, usePayeesStore, type LoadStatus } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { Bill, CreateBill, Party } from "@/types/bill";
-import { cn } from "@/utils";
+import { cn, errorMessage } from "@/utils";
 import { balances, type Debt } from "./balances";
 import { settleUp } from "./settle";
 import { initials } from "./usePayee";
-
-const errorMessage = (err: unknown) => (err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.";
 
 /** Payees, who owes whom and recent bills, with the add, split, settle and delete actions. Shared by the mobile and desktop screens. */
 export function usePayeesList() {
@@ -21,7 +19,6 @@ export function usePayeesList() {
   const [adding, setAdding] = useState(false);
   const [splitting, setSplitting] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const debts = useMemo(() => balances(bills.items), [bills.items]);
   // Each payee's open balance with you: positive when they owe you.
@@ -43,24 +40,22 @@ export function usePayeesList() {
 
   function settle(d: Debt) {
     setPending(`settle:${d.from}|${d.to}`);
-    setError(null);
     settleUp(d.from, d.to)
-      .catch((err) => setError(errorMessage(err)))
+      .catch((err) => toast.error(errorMessage(err)))
       .finally(() => setPending(null));
   }
 
   function removeBill(bill: Bill) {
     if (!window.confirm(`Delete "${bill.title}"? This removes the record only.`)) return;
     setPending(`delete:${bill.id}`);
-    setError(null);
     useBillsStore
       .getState()
       .remove(bill.id)
-      .catch((err) => setError(errorMessage(err)))
+      .catch((err) => toast.error(errorMessage(err)))
       .finally(() => setPending(null));
   }
 
-  return { payees, bills, debts, withMe, adding, setAdding, splitting, setSplitting, pending, error, add, split, settle, removeBill };
+  return { payees, bills, debts, withMe, adding, setAdding, splitting, setSplitting, pending, add, split, settle, removeBill };
 }
 
 export type PayeesListModel = ReturnType<typeof usePayeesList>;

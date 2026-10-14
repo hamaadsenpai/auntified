@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { BackIcon } from "@/components/icons";
 import { ROUTES } from "@/constants";
-import { AmountCards, HotWeek, UsualHours, usePatterns, WeekVsNormal } from "./PatternsParts";
+import { AmountCards, CoverageCheck, HotWeek, RecurringCharges, UsualHours, usePatterns, WeekVsNormal } from "./PatternsParts";
 
 const PANEL = "flex flex-col rounded-[24px] border-[2.5px] border-ink px-[24px] py-[20px] shadow-hard-md";
 
@@ -30,6 +30,12 @@ export function PatternsDesktop() {
           </section>
           <section aria-label="Usual hours" className={PANEL}>
             <UsualHours p={p} variant="desktop" />
+          </section>
+          <section aria-label="Recurring bills and subscriptions" className={PANEL}>
+            <RecurringCharges p={p} variant="desktop" />
+          </section>
+          <section aria-label="Coverage check" className={PANEL}>
+            <CoverageCheck p={p} variant="desktop" />
           </section>
         </div>
       </div>

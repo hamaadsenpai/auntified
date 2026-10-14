@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { BackIcon } from "@/components/icons";
 import { AuntieBao } from "@/components/mascot";
-import { AuntieBubble, Button, Money, NudgeCard, ProgressBar } from "@/components/ui";
+import { AuntieBubble, Button, Money, ProgressBar } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { ExpenseList } from "./ExpenseList";
+import { SuggestedCuts } from "./SuggestedCuts";
+import { useAuntieRoast } from "./useAuntieRoast";
 import { useRoast } from "./useRoast";
 import { formatDay } from "./week";
 
 export function RoastDesktop() {
   const { ready, label, week, totalSgd, categories, biggest, goal, goalLoaded } = useRoast();
+  const auntie = useAuntieRoast();
   return (
     <main className="hidden min-h-dvh min-w-0 flex-col gap-[28px] bg-white px-[40px] py-[32px] lg:flex">
       <header className="flex flex-col gap-[6px]">
@@ -34,7 +37,7 @@ export function RoastDesktop() {
               <AuntieBao mood="meh" width={110} height={102} />
               <div className="mb-[60px] flex flex-col items-start gap-[4px]">
                 <span className="rounded-full border-[2.5px] border-ink bg-white px-[16px] py-[8px] font-display text-[16px] font-semibold whitespace-nowrap">
-                  aiyoh...
+                  {auntie.badge ?? "aiyoh..."}
                 </span>
                 <span className="ml-[-6px] h-[10px] w-[10px] rounded-[5px] border-[2.5px] border-ink bg-white"></span>
               </div>
@@ -45,11 +48,13 @@ export function RoastDesktop() {
             <div className="flex flex-col gap-[6px]">
               <span className="text-[13px] font-bold text-teal">Auntie Kumari</span>
               <AuntieBubble className="rounded-[6px_24px_24px_24px] px-[18px] py-[14px] text-[18px]">
-                {!ready
+                {!ready || auntie.status === "loading"
                   ? "Let me look at your week…"
-                  : biggest
-                    ? `${week.length} ${week.length === 1 ? "spend" : "spends"} across ${categories.length} ${categories.length === 1 ? "category" : "categories"} this week. ${biggest.category} leaked the most.`
-                    : "Log what you spend and Auntie will roast it here."}
+                  : auntie.roast
+                    ? auntie.roast
+                    : biggest
+                      ? `${week.length} ${week.length === 1 ? "spend" : "spends"} across ${categories.length} ${categories.length === 1 ? "category" : "categories"} this week. ${biggest.category} leaked the most.`
+                      : "Log what you spend and Auntie will roast it here."}
               </AuntieBubble>
             </div>
           </div>
@@ -96,12 +101,7 @@ export function RoastDesktop() {
               </div>
             )
           )}
-          {biggest && (
-            <NudgeCard className="gap-[4px] rounded-[20px] px-[20px] py-[16px]" bodyClassName="text-[18px]">
-              {biggest.category} is your biggest leak: <Money sgd={biggest.totalSgd} /> over {biggest.count}{" "}
-              {biggest.count === 1 ? "spend" : "spends"}. Halve it and keep <Money sgd={biggest.totalSgd / 2} /> back.
-            </NudgeCard>
-          )}
+          <SuggestedCuts large />
           <div className="mt-[8px] flex gap-[10px]">
             <Button variant="secondary" href={ROUTES.ASK} className="flex-1">
               Ask Auntie about it

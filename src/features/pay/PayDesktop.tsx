@@ -185,11 +185,6 @@ export function PayDesktop() {
             </ul>
           )}
         </div>
-        {draft.error && (
-          <p role="alert" className="m-0 text-[14px] font-semibold text-brick">
-            {draft.error}
-          </p>
-        )}
         <div className="mt-auto flex gap-[10px]">
           <button
             type="button"

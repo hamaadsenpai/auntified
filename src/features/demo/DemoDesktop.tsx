@@ -7,7 +7,7 @@ import { AuntieBao } from "@/components/mascot";
 import { Money } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { DEMO_FIRE } from "@/constants/demo";
-import { ActionButton, DemoBanner, DemoMessage, DemoStats, JumpSelect, ResetControl, resetHint } from "./DemoControls";
+import { ActionButton, DemoBanner, DemoStats, FireSmsButton, JumpSelect, ResetControl, resetHint } from "./DemoControls";
 import { useDemo } from "./DemoProvider";
 
 const PANEL = "flex flex-col gap-[14px] rounded-[24px] border-[2.5px] border-ink px-[24px] py-[20px] shadow-hard-md";
@@ -63,6 +63,9 @@ export function DemoDesktop() {
         >
           <ActionButton action="fire">Fire</ActionButton>
         </ActionPanel>
+        <ActionPanel id="dsms-h" title="Fire a scam text" hint="A fake bank SMS with a lookalike link, straight into the scam scanner">
+          <FireSmsButton />
+        </ActionPanel>
         <ActionPanel id="djump-h" title={<label htmlFor="djump">Jump the clock</label>} hint="Ends cool downs, triggers the next roast">
           <JumpSelect id="djump" />
           <ActionButton action="jump">Jump</ActionButton>
@@ -71,7 +74,6 @@ export function DemoDesktop() {
           <ResetControl />
         </ActionPanel>
       </div>
-      <DemoMessage />
     </main>
   );
 }

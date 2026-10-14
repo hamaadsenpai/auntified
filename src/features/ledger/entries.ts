@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import type { TagVariant } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { useCredits, useExpenses, useTransfers, useTransfersStore } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { Credit } from "@/types/credit";
 import type { Expense } from "@/types/expense";
 import type { Transfer } from "@/types/transfer";
+import { errorMessage } from "@/utils";
 import { expenseWeeks, formatRange, STATUS_TAG, sumSgd } from "./history";
 
 export const FILTERS = ["Payments", "Roasts", "Blocks", "Credits"] as const;
@@ -80,7 +81,6 @@ export function useLedger() {
   const credits = useCredits();
   const [filter, setFilter] = useState<Filter>("All");
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const all = useMemo(() => buildEntries(transfers.items, expenses.items, credits.items), [transfers.items, expenses.items, credits.items]);
   const entries = useMemo(() => all.filter((e) => matches(e, filter)), [all, filter]);
@@ -117,11 +117,10 @@ export function useLedger() {
   const remove = async (t: Transfer) => {
     if (!window.confirm(`Delete this ${t.payeeName} payment from your history?`)) return;
     setDeleting(t.id);
-    setDeleteError(null);
     try {
       await useTransfersStore.getState().remove(t.id);
     } catch (err) {
-      setDeleteError((err as ApiFailure["error"]).message);
+      toast.error(errorMessage(err));
     } finally {
       setDeleting(null);
     }
@@ -138,6 +137,5 @@ export function useLedger() {
     setFilter,
     remove,
     deleting,
-    deleteError,
   };
 }

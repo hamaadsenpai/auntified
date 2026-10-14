@@ -15,6 +15,7 @@ export function proxy(req: NextRequest) {
 // Must be static literals. These are the (app) route group's pages.
 export const config = {
   matcher: [
+    "/analyst/:path*",
     "/home/:path*",
     "/ask/:path*",
     "/demo/:path*",
@@ -24,6 +25,7 @@ export const config = {
     "/pay/:path*",
     "/payees/:path*",
     "/roast/:path*",
+    "/scan/:path*",
     "/settings/:path*",
   ],
 };

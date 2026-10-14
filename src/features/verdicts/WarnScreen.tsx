@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { BackHeader, Screen } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
 import { Button, Money, RiskMeter } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { useCurrency, useSettingsStore, useTransfersStore } from "@/store";
-import type { ApiFailure } from "@/types/api";
+import { useCurrency, usePayeesStore, useSettingsStore, useTransfersStore } from "@/store";
+import { usePayDraftStore } from "@/store/pay-draft.store";
 import type { Transfer } from "@/types/transfer";
+import { errorMessage } from "@/utils";
 import { convertFromSgd } from "@/utils/format";
+import { useNow } from "@/features/roast/week";
+import { ContactAlertNote, RiskBreakdown } from "./RiskBreakdown";
 import { formatWhen, TransferFallback, useTransferParam } from "./transfer-param";
 import { PANEL, VerdictDesktop } from "./VerdictDesktop";
 
@@ -18,34 +22,39 @@ export function WarnScreen() {
   const router = useRouter();
   const currency = useCurrency();
   const { transfer, missing } = useTransferParam();
+  const now = useNow();
   const [confirm, setConfirm] = useState("");
   const [pending, setPending] = useState<"overridden" | "cancelled" | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   if (!transfer) return <TransferFallback missing={missing} />;
 
   const score = transfer.score ?? transfer.rulesScore;
   const phrase = `SEND ${Math.round(convertFromSgd(transfer.amountSgd, currency))}`;
-  const worries = [...new Set([...transfer.reasons, ...transfer.flags])];
+  // Until the cooling-off ends, or while the bank holds it, "pay anyway" stays off (the server enforces both).
+  const coolingOff = transfer.holdUntil !== null && (now === null || Date.parse(transfer.holdUntil) > now.getTime());
+  const bankHold = transfer.review?.action === "hold";
   // Stays open while a decision saves, so the form doesn't flicker before the redirect.
   const open = transfer.status === "warned" || pending !== null;
 
   async function decide(status: "overridden" | "cancelled") {
     if (!transfer) return;
     setPending(status);
-    setError(null);
     try {
       await useTransfersStore.getState().update(transfer.id, { status });
-      // Paying anyway debits the account, so the balances shown elsewhere need reloading.
-      if (status === "overridden") void useSettingsStore.getState().load(true);
+      // Paying anyway sends the money like a pass: it moves the balance and the payee's count.
+      if (status === "overridden") {
+        usePayDraftStore.getState().reset();
+        void useSettingsStore.getState().load(true);
+        void usePayeesStore.getState().load(true);
+      }
       router.push(ROUTES.HOME);
     } catch (err) {
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
+      toast.error(errorMessage(err));
       setPending(null);
     }
   }
 
-  const view: WarnView = { transfer, score, phrase, worries, open, confirm, setConfirm, pending, error, decide };
+  const view: WarnView = { transfer, score, phrase, open, confirm, setConfirm, pending, decide, locked: coolingOff || bankHold };
 
   return (
     <>
@@ -71,10 +80,10 @@ export function WarnScreen() {
           </div>
           <div className="flex flex-col gap-[2px]">
             <h2 className="m-0 mb-[4px] font-display text-[16px] font-bold">What worries her</h2>
-            <Worries worries={worries} />
+            <RiskBreakdown transfer={transfer} />
           </div>
+          <ContactAlertNote transfer={transfer} />
           {open ? <ConfirmField id="confirm" {...view} /> : <Decided transfer={transfer} />}
-          <DecideError error={error} />
         </main>
         {open && (
           <div className="flex flex-none flex-col gap-[10px] px-[20px] pt-[12px] pb-[24px]">
@@ -90,17 +99,17 @@ type WarnView = {
   transfer: Transfer;
   score: number;
   phrase: string;
-  worries: string[];
   open: boolean;
+  /** Cooling off or held by the bank: "pay anyway" is off. */
+  locked: boolean;
   confirm: string;
   setConfirm: (value: string) => void;
   pending: "overridden" | "cancelled" | null;
-  error: string | null;
   decide: (status: "overridden" | "cancelled") => Promise<void>;
 };
 
 function WarnDesktop(view: WarnView) {
-  const { transfer, score, worries, open, error } = view;
+  const { transfer, score, open } = view;
   return (
     <VerdictDesktop back={{ href: ROUTES.PAY, label: "Back to pay" }} kicker={<Subtitle transfer={transfer} />} title="Hold on">
       <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-start gap-[24px]">
@@ -125,15 +134,15 @@ function WarnDesktop(view: WarnView) {
             <h2 id="dworries-h" className="m-0 mb-[4px] font-display text-[17px] font-bold">
               What worries her
             </h2>
-            <Worries worries={worries} />
+            <RiskBreakdown transfer={transfer} />
           </section>
+          <ContactAlertNote transfer={transfer} />
         </div>
         <section aria-labelledby="ddecide-h" className={`${PANEL} gap-[16px]`}>
           <h2 id="ddecide-h" className="m-0 font-display text-[17px] font-bold">
             Your call
           </h2>
           {open ? <ConfirmField id="dconfirm" {...view} /> : <Decided transfer={transfer} />}
-          <DecideError error={error} />
           {open && (
             <div className="grid grid-cols-2 gap-[10px]">
               <DecideButtons {...view} />
@@ -153,16 +162,16 @@ function Subtitle({ transfer }: { transfer: Transfer }) {
   );
 }
 
-function Worries({ worries }: { worries: string[] }) {
-  if (worries.length === 0) return <span className="py-[10px] text-[14px] font-medium text-muted">She did not give a reason.</span>;
-  return worries.map((worry, i) => (
-    <div key={worry} className={i < worries.length - 1 ? "flex flex-col gap-[2px] border-b border-line py-[10px]" : "flex flex-col gap-[2px] py-[10px]"}>
-      <span className="text-[15px] font-semibold">{worry}</span>
-    </div>
-  ));
-}
-
-function ConfirmField({ id, phrase, confirm, setConfirm }: { id: string } & WarnView) {
+function ConfirmField({ id, transfer, phrase, confirm, setConfirm, locked }: { id: string } & WarnView) {
+  if (locked) {
+    return (
+      <p role="status" className="m-0 rounded-[16px] bg-wash px-[14px] py-[12px] text-[14px] leading-[1.4] font-medium">
+        {transfer.review?.action === "hold"
+          ? "The bank is holding this payment for review. You can still cancel it."
+          : `Cooling off: you can pay anyway after ${formatWhen(transfer.holdUntil!, ", ")}. Talk to someone you trust first.`}
+      </p>
+    );
+  }
   return (
     <div className="flex flex-col gap-[8px]">
       <label htmlFor={id} className="text-[15px] font-semibold">
@@ -199,21 +208,12 @@ function Decided({ transfer }: { transfer: Transfer }) {
   );
 }
 
-function DecideError({ error }: { error: string | null }) {
-  if (!error) return null;
-  return (
-    <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-      {error}
-    </p>
-  );
-}
-
-function DecideButtons({ phrase, confirm, pending, decide }: WarnView) {
+function DecideButtons({ phrase, confirm, pending, decide, locked }: WarnView) {
   return (
     <>
       <Button
         className="disabled:opacity-60"
-        disabled={pending !== null || confirm.trim().toUpperCase() !== phrase}
+        disabled={pending !== null || locked || confirm.trim().toUpperCase() !== phrase}
         onClick={() => void decide("overridden")}
       >
         {pending === "overridden" ? "Sending…" : "Pay anyway"}

@@ -14,15 +14,16 @@ export const useCurrencyStore = createPersistedStore<CurrencyState>("currency", 
   setCurrency: (code) => {
     if (isCurrencyCode(code)) set({ code });
   },
-  /** Optimistic: switches now, saves to the profile, and reverts if the save fails. */
+  /** Optimistic: switches now, saves to the profile, reverts if the save fails, then rethrows. */
   saveCurrency: async (code) => {
     if (!isCurrencyCode(code)) return;
     const previous = get().code;
     set({ code });
     try {
       await userService.updatePreferences({ currency: code });
-    } catch {
+    } catch (err) {
       if (get().code === code) set({ code: previous });
+      throw err;
     }
   },
 }));

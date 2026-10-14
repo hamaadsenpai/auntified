@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ROUTES } from "@/constants";
 import { authService } from "@/services/auth.service";
 import { AuthCard } from "./AuthCard";
@@ -16,7 +17,12 @@ export function SignupScreen() {
       switchLabel="Log in"
       switchHref={ROUTES.LOGIN}
       onSubmit={(data) =>
-        authService.signUpWithEmail(String(data.get("name")).trim(), String(data.get("email")), String(data.get("password")))
+        authService.signUpWithEmail(
+          String(data.get("name")).trim(),
+          String(data.get("email")),
+          String(data.get("password")),
+          data.get("terms") === "on",
+        )
       }
     >
       <AuthField id="signup-name" name="name" label="Name" type="text" autoComplete="name" required />
@@ -32,8 +38,14 @@ export function SignupScreen() {
         required
       />
       <label className="flex cursor-pointer items-start gap-[12px] text-[14px] font-medium">
-        <input type="checkbox" required className="m-0 mt-[1px] h-[20px] w-[20px] flex-none cursor-pointer accent-teal" />
-        <span>I agree to the terms, and I know this demo does not connect to a bank.</span>
+        <input type="checkbox" name="terms" required className="m-0 mt-[1px] h-[20px] w-[20px] flex-none cursor-pointer accent-teal" />
+        <span>
+          I agree to the{" "}
+          <Link href={ROUTES.TERMS} target="_blank" className="font-semibold">
+            terms
+          </Link>
+          , and I know this demo does not connect to a bank.
+        </span>
       </label>
       <p className="m-0 rounded-[14px] bg-wash px-[14px] py-[10px] text-[13px] font-semibold text-muted">
         Auntie never asks for your PIN, password or OTP.

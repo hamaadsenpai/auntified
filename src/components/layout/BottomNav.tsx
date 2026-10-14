@@ -10,7 +10,7 @@ type BottomNavProps = {
 
 export function BottomNav({ active }: BottomNavProps) {
   return (
-    <nav aria-label="Main" className="grid h-[72px] flex-none grid-cols-5 border-t border-line px-[8px] pb-[8px] lg:hidden">
+    <nav aria-label="Main" className="grid h-[72px] flex-none grid-cols-6 border-t border-line px-[4px] pb-[8px] lg:hidden">
       {NAV_ITEMS.map(({ key, label, href, Icon }) => {
         const isActive = key === active;
         return (
@@ -19,7 +19,7 @@ export function BottomNav({ active }: BottomNavProps) {
             href={href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex flex-col items-center justify-center gap-[4px] text-[12px] no-underline",
+              "flex flex-col items-center justify-center gap-[4px] text-center text-[12px] leading-[1.15] no-underline",
               isActive ? "font-bold text-teal" : "font-medium text-muted",
             )}
           >

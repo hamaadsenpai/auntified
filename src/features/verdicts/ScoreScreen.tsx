@@ -3,6 +3,7 @@
 import { BackHeader, Screen } from "@/components/layout";
 import { Money, RiskMeter, Tag } from "@/components/ui";
 import { ROUTES, withTransfer } from "@/constants";
+import { RiskBreakdown } from "./RiskBreakdown";
 import { formatWhen, TransferFallback, useTransferParam } from "./transfer-param";
 import { PANEL, VerdictDesktop } from "./VerdictDesktop";
 
@@ -12,33 +13,6 @@ const THRESHOLDS = [
   { label: "Warn", min: 40, max: 69, effect: "Typed confirmation" },
   { label: "Block", min: 70, max: 100, effect: "Stopped" },
 ];
-
-function SignalList({ title, total, items, empty }: { title: string; total: number | null; items: string[]; empty: string }) {
-  return (
-    <section className="flex flex-col">
-      <div className="flex justify-between pb-[4px]">
-        <h2 className="m-0 font-display text-[15px] font-bold">{title}</h2>
-        <span className="text-[14px] font-bold">{total ?? "—"}</span>
-      </div>
-      {items.length === 0 ? (
-        <span className="py-[8px] text-[14px] font-medium text-muted">{empty}</span>
-      ) : (
-        items.map((item, i) => (
-          <div
-            key={item}
-            className={
-              i < items.length - 1
-                ? "flex justify-between border-b border-line py-[8px] text-[14px] font-medium"
-                : "flex justify-between py-[8px] text-[14px] font-medium"
-            }
-          >
-            <span>{item}</span>
-          </div>
-        ))
-      )}
-    </section>
-  );
-}
 
 export function ScoreScreen() {
   const { transfer, missing } = useTransferParam();
@@ -79,14 +53,12 @@ export function ScoreScreen() {
             </div>
             <Thresholds score={score} />
           </section>
-          <div className="grid grid-cols-2 items-start gap-[24px]">
-            <div className={PANEL}>
-              <SignalList title="Rule signals" total={transfer.rulesScore} items={transfer.flags} empty="No rule flags on this payment." />
-            </div>
-            <div className={PANEL}>
-              <SignalList title="Model flags" total={transfer.modelScore} items={transfer.reasons} empty="Auntie gave no reasons." />
-            </div>
-          </div>
+          <section aria-labelledby="dwhy-h" className={`${PANEL} gap-[8px]`}>
+            <h2 id="dwhy-h" className="m-0 font-display text-[17px] font-bold">
+              What added up
+            </h2>
+            <RiskBreakdown transfer={transfer} />
+          </section>
         </div>
       </VerdictDesktop>
       <Screen className="lg:hidden">
@@ -104,8 +76,10 @@ export function ScoreScreen() {
             </div>
             <RiskMeter score={score} />
           </div>
-          <SignalList title="Rule signals" total={transfer.rulesScore} items={transfer.flags} empty="No rule flags on this payment." />
-          <SignalList title="Model flags" total={transfer.modelScore} items={transfer.reasons} empty="Auntie gave no reasons." />
+          <section className="flex flex-col gap-[4px]">
+            <h2 className="m-0 font-display text-[15px] font-bold">What added up</h2>
+            <RiskBreakdown transfer={transfer} />
+          </section>
           <Thresholds score={score} />
         </main>
       </Screen>

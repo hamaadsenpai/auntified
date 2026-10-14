@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { byCategory, DAY_MS, formatDayYear, spentBetween, sumSgd, useNow } from "@/features/ledger/history";
+import { byCategory, formatDayYear, sumSgd, useNow } from "@/features/ledger/history";
+import { inRange, weeklyNormal, weekWindow } from "@/features/roast/week";
 import { type LoadStatus, useExpenses, useSettings, useTransfers } from "@/store";
 
 /** One store's load state, as LoadNote reads it. */
@@ -34,18 +35,18 @@ export function useHome() {
     [transfers.items],
   );
 
-  // "This week" is the last 7 days; "normal" is the weekly average over the 4 weeks before it.
+  // Same week window and "normal" as Patterns, so the two screens agree.
   const week = useMemo(() => {
     if (now === null) return null;
-    const spends = spentBetween(expenses.items, now, 0, 7);
+    const { start, end } = weekWindow(new Date(now));
+    const spends = expenses.items.filter((e) => inRange(e, start, end));
     const categories = byCategory(spends);
-    const before = spentBetween(expenses.items, now, 7, 35);
-    const normal = new Map(byCategory(before).map((c) => [c.category, c.totalSgd / 4]));
+    const { perCategory: normal, hasHistory } = weeklyNormal(expenses.items, start);
     return {
       count: spends.length,
       totalSgd: sumSgd(spends),
       top: categories[0] ?? null,
-      hasNormal: expenses.items.some((e) => now - new Date(e.spentAt).getTime() >= 7 * DAY_MS),
+      hasNormal: hasHistory,
       vsNormal: categories.slice(0, 3).map((c) => ({ ...c, normalSgd: normal.get(c.category) ?? 0 })),
     };
   }, [expenses.items, now]);

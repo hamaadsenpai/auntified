@@ -5,8 +5,17 @@
  */
 export type TransferStatus = "pending" | "warned" | "passed" | "overridden" | "blocked" | "cancelled" | "expired";
 
+import type { RiskSignal } from "./check";
+
 /** The user's case for a blocked transfer. Recorded only: the block stays and nothing is sent. */
 export type TransferAppeal = { reason: string; at: string };
+
+/** The trusted contact Auntie alerted when she warned about or blocked this transfer. */
+export type ContactAlert = { name: string; phone: string; at: string };
+
+/** A bank analyst's decision on a flagged transfer. approve sends it; hold stops "pay anyway"; report blocks it and marks the payee. */
+export type ReviewAction = "approve" | "hold" | "report";
+export type TransferReview = { action: ReviewAction; at: string };
 
 /** `users/{uid}/transfers/{id}` as the client sees it. */
 export type Transfer = {
@@ -21,13 +30,21 @@ export type Transfer = {
   status: TransferStatus;
   /** Rule flags and their score, worked out when the transfer is created or edited. */
   flags: string[];
+  /** The same flags with reason codes and weights (empty on transfers made before there were any). */
+  signals: RiskSignal[];
   rulesScore: number;
   /** Filled in once Auntie's check finishes. */
   modelScore: number | null;
   score: number | null;
   reasons: string[];
+  /** Auntie's one-sentence sum-up of the reasons, once her check finishes. */
+  summary: string | null;
   /** Set once the user appeals a block. */
   appeal: TransferAppeal | null;
+  /** A warned transfer can't be sent anyway until then (the cooling-off period). */
+  holdUntil: string | null;
+  contactAlert: ContactAlert | null;
+  review: TransferReview | null;
   createdAt: string;
   updatedAt: string;
 };

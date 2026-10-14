@@ -29,6 +29,10 @@ export const ENDPOINTS = {
   BILL: (id: string) => `/api/bills/${encodeURIComponent(id)}`,
   CREDITS: "/api/credits",
   ASK: "/api/ask",
+  ROAST: "/api/roast",
   DEMO: "/api/demo",
+  SCAN: "/api/scan",
+  ANALYST: "/api/analyst",
+  STATEMENTS: "/api/statements",
 } as const;
 

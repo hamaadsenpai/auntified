@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Money } from "@/components/ui";
 import { useExpensesStore } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { Expense } from "@/types/expense";
-import { cn } from "@/utils";
+import { cn, errorMessage } from "@/utils";
 import { ExpenseForm } from "./ExpenseForm";
+import { StatementUpload } from "./StatementUpload";
 import { useRoast } from "./useRoast";
 import { formatDay } from "./week";
 
@@ -16,20 +17,31 @@ const LINK = "min-h-[44px] cursor-pointer border-none bg-transparent p-0 text-[1
 export function ExpenseList({ className }: { className?: string }) {
   const { status, error, ready, expenses, week } = useRoast();
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? expenses : week;
   const older = expenses.length - week.length;
 
   return (
     <section className={cn("flex flex-col gap-[12px]", className)}>
-      <div className="flex items-baseline justify-between gap-[12px]">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-[12px]">
         <h2 className="m-0 font-display text-[18px] font-bold">{showAll ? "All spending" : "Spent this week"}</h2>
-        {!adding && (
-          <button type="button" className={LINK} onClick={() => setAdding(true)}>
-            Add spending
-          </button>
+        {!adding && !importing && (
+          <span className="flex gap-[16px]">
+            <button type="button" className={LINK} onClick={() => setImporting(true)}>
+              Upload statement
+            </button>
+            <button type="button" className={LINK} onClick={() => setAdding(true)}>
+              Add spending
+            </button>
+          </span>
         )}
       </div>
+      {importing && (
+        <div className="rounded-[18px] bg-wash p-[16px]">
+          <StatementUpload onClose={() => setImporting(false)} />
+        </div>
+      )}
       {adding && (
         <div className="rounded-[18px] bg-wash p-[16px]">
           <ExpenseForm
@@ -76,16 +88,14 @@ export function ExpenseList({ className }: { className?: string }) {
 function ExpenseRow({ expense }: { expense: Expense }) {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleDelete() {
     if (!window.confirm(`Delete "${expense.name}"?`)) return;
     setDeleting(true);
-    setError(null);
     try {
       await useExpensesStore.getState().remove(expense.id);
     } catch (err) {
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
+      toast.error(errorMessage(err));
       setDeleting(false);
     }
   }
@@ -123,11 +133,6 @@ function ExpenseRow({ expense }: { expense: Expense }) {
           {deleting ? "Deleting…" : "Delete"}
         </button>
       </span>
-      {error && (
-        <p role="alert" className="col-span-full m-0 text-[13px] font-semibold text-brick">
-          {error}
-        </p>
-      )}
     </li>
   );
 }

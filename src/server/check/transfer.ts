@@ -3,8 +3,9 @@ import { io } from "next/cache";
 import { COLLECTIONS } from "@/constants";
 import { ApiError } from "@/lib/api/errors";
 import { db } from "@/lib/firebase/admin";
-import { accountsFrom } from "@/server/repositories/accounts.repository";
+import { accountsFrom, sendableFrom } from "@/server/repositories/accounts.repository";
 import { getPayee } from "@/server/repositories/payees.repository";
+import type { RiskCode, RiskSignal } from "@/types/check";
 import type { CreateTransfer, TransferStatus } from "@/types/transfer";
 
 /** What the bank knows about a transfer before Auntie asks anything. */
@@ -17,6 +18,7 @@ export type TransferFacts = {
   scamReports: number;
   /** Median of the user's sent transfers; null before their first one. */
   medianTransferSgd: number | null;
+  /** The paying account's balance less any Money Lock. */
   availableSgd: number;
   /** Hour of day it's being paid, Singapore time: 22.5 is 10:30pm. */
   hourSgt: number;
@@ -93,50 +95,39 @@ export async function buildTransferFacts(
     priorTransfersToPayee: payee.transferCount,
     scamReports: payee.reported ? 1 : 0,
     medianTransferSgd: median(sent.map((d) => d.get("amountSgd")).filter((v): v is number => typeof v === "number")),
-    availableSgd: from.balanceSgd,
+    availableSgd: sendableFrom(userSnap.data(), from),
     hourSgt: hourSgt(Date.now()),
     usualHours: usualHours(hours.map(hourSgt)),
   };
 }
 
-/** Deterministic red flags, scored before the model sees anything. Caps at 46 so the model decides the rest. */
-export function scoreRules(t: TransferFacts): { score: number; flags: string[] } {
-  const flags: string[] = [];
-  let score = 0;
-  if (t.payeeAgeMinutes < 60) {
-    score += 16;
-    flags.push(`Payee added ${t.payeeAgeMinutes} min ago`);
-  }
-  if (t.priorTransfersToPayee === 0) {
-    score += 10;
-    flags.push("First transfer to this payee");
-  }
+/** The rules' share of the score. Caps at 46 so the model decides the rest. */
+export const MAX_RULES_SCORE = 46;
+
+/** Pressure words scammers put in a payment reference. */
+const URGENCY = /\b(urgent(ly)?|immediately|asap|right now|final notice|penalty|overdue|suspend(ed)?|frozen|unlock|release|clearance)\b/i;
+
+/** Deterministic red flags, scored before the model sees anything, each with its reason code and weight. */
+export function scoreRules(t: TransferFacts): { score: number; flags: string[]; signals: RiskSignal[] } {
+  const signals: RiskSignal[] = [];
+  const add = (code: RiskCode, weight: number, label: string) => signals.push({ code, weight, label });
+  if (t.payeeAgeMinutes < 60) add("new_payee", 16, `Payee added ${t.payeeAgeMinutes} min ago`);
+  if (t.priorTransfersToPayee === 0) add("first_transfer", 10, "First transfer to this payee");
   // No sent transfers yet means nothing to compare against.
   const multiple = t.medianTransferSgd ? t.amountSgd / t.medianTransferSgd : 0;
-  if (multiple >= 10) {
-    score += 12;
-    flags.push(`${Math.round(multiple)}x your median transfer`);
-  }
-  if (t.scamReports > 0) {
-    score += 8;
-    flags.push(`${t.scamReports} scam report${t.scamReports === 1 ? "" : "s"} on this payee`);
-  }
+  if (multiple >= 3) add("large_amount", 12, `${Math.round(multiple)}x your usual transfer`);
+  if (t.scamReports > 0) add("scam_reports", 8, `${t.scamReports} scam report${t.scamReports === 1 ? "" : "s"} on this payee`);
   // Late night (10pm to 6am) or outside the user's own usual hours.
   const late = t.hourSgt >= 22 || t.hourSgt < 6;
   const usual = t.usualHours;
   const unusual = usual !== null && (t.hourSgt < usual.from || t.hourSgt > usual.to);
   if (late || unusual) {
-    score += 6;
     const when = `Paying at ${hourLabel(t.hourSgt)}`;
-    flags.push(
-      unusual
-        ? `${when}, outside your usual ${hourLabel(usual.from)} to ${hourLabel(usual.to)}`
-        : `${when}, late at night`,
-    );
+    add("odd_hour", 6, unusual ? `${when}, outside your usual ${hourLabel(usual.from)} to ${hourLabel(usual.to)}` : `${when}, late at night`);
   }
-  if (t.amountSgd > t.availableSgd) {
-    score += 4;
-    flags.push("More than your available balance");
-  }
-  return { score: Math.min(score, 46), flags };
+  const urgent = URGENCY.exec(t.reference);
+  if (urgent) add("urgency_words", 6, `Pressure word in the reference: "${urgent[0].toLowerCase()}"`);
+  if (t.amountSgd > t.availableSgd) add("over_balance", 4, "More than your available balance");
+  const total = signals.reduce((sum, s) => sum + s.weight, 0);
+  return { score: Math.min(total, MAX_RULES_SCORE), flags: signals.map((s) => s.label), signals };
 }

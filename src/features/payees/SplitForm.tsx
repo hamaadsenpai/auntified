@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import { Button, Input, Money, Select } from "@/components/ui";
 import { LIMITS } from "@/constants";
 import { useCurrency } from "@/store";
-import type { ApiFailure } from "@/types/api";
 import type { CreateBill, Party } from "@/types/bill";
 import type { Payee } from "@/types/payee";
+import { errorMessage } from "@/utils";
 import { splitEqually } from "./balances";
 
 type SplitFormProps = {
@@ -26,7 +27,6 @@ export function SplitForm({ payees, onSubmit, onCancel, idPrefix = "split" }: Sp
   const [paidBy, setPaidBy] = useState<Party>("me");
   const [picked, setPicked] = useState<Party[]>(["me"]);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const people = [{ id: "me", name: "You" }, ...payees];
   // Payer first, so they absorb the leftover cents.
@@ -39,16 +39,15 @@ export function SplitForm({ payees, onSubmit, onCancel, idPrefix = "split" }: Sp
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (participants.length < 2) return setError("Pick at least two people.");
-    if (!(totalSgd > 0)) return setError("Enter a total more than zero.");
-    if (parts.includes(0)) return setError("That total is too small to split.");
+    if (participants.length < 2) return toast.error("Pick at least two people.");
+    if (!(totalSgd > 0)) return toast.error("Enter a total more than zero.");
+    if (parts.includes(0)) return toast.error("That total is too small to split.");
     setPending(true);
-    setError(null);
     try {
       const shares = participants.slice(1).map((who, i) => ({ who, amountSgd: parts[i + 1]! }));
       await onSubmit({ kind: "split", title: title.trim(), totalSgd, paidBy, shares });
     } catch (err) {
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
+      toast.error(errorMessage(err));
     } finally {
       setPending(false);
     }
@@ -117,11 +116,6 @@ export function SplitForm({ payees, onSubmit, onCancel, idPrefix = "split" }: Sp
       {parts.length > 0 && (
         <p className="m-0 text-[14px] font-medium text-muted">
           Split equally: {participants.length} people, about <Money sgd={parts[parts.length - 1]!} /> each.
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-          {error}
         </p>
       )}
       <div className="flex gap-[12px]">

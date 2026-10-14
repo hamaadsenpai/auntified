@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import toast from "react-hot-toast";
 import { Money } from "@/components/ui";
 import { ROUTES, withTransfer } from "@/constants";
 import { DEMO_JUMPS } from "@/constants/demo";
@@ -9,8 +10,8 @@ import { formatDay, formatTime, useNow } from "@/features/roast/week";
 import { demoService } from "@/services/demo.service";
 import { useCreditsStore, useExpenses, useExpensesStore, usePayeesStore, useSettings, useSettingsStore, useTransfers, useTransfersStore } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
-import type { ApiFailure } from "@/types/api";
 import type { DemoAction } from "@/types/demo";
+import { errorMessage } from "@/utils";
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -21,8 +22,6 @@ type Demo = {
   stats: { label: string; value: ReactNode }[];
   /** The action running now, if any; every button is disabled meanwhile. */
   busy: Action | null;
-  /** The last action's outcome, for the aria-live line. */
-  message: { ok: boolean; text: string } | null;
   jumpHours: number;
   setJumpHours: (hours: number) => void;
   /** Reset asks first: the first press sets this, the confirm button runs it. */
@@ -60,7 +59,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const { settings, status: settingsStatus } = useSettings();
   const [clockOffsetMs, setClockOffsetMs] = useState<number | null>(null);
   const [busy, setBusy] = useState<Action | null>(null);
-  const [message, setMessage] = useState<Demo["message"]>(null);
   const [jumpHours, setJumpHours] = useState<number>(DEMO_JUMPS[1].hours);
   const [confirmingReset, setConfirmingReset] = useState(false);
 
@@ -74,7 +72,6 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   async function run(action: Action) {
     if (busy) return;
     setBusy(action);
-    setMessage(null);
     setConfirmingReset(false);
     try {
       const res = await demoService.run(action === "jump" ? { action, hours: jumpHours } : { action });
@@ -83,10 +80,10 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       for (const store of [usePayeesStore, useExpensesStore, useTransfersStore, useSettingsStore, useCreditsStore]) void store.getState().load(true);
       if (action === "seed" || action === "reset") usePayDraftStore.getState().reset();
       const label = DEMO_JUMPS.find((j) => j.hours === jumpHours)?.label.toLowerCase();
-      setMessage({ ok: true, text: action === "jump" ? `Clock moved forward, ${label}.` : DONE[action] });
+      toast.success(action === "jump" ? `Clock moved forward, ${label}.` : DONE[action]);
       if (res.transferId) router.push(withTransfer(ROUTES.PAY_CHECK, res.transferId));
     } catch (err) {
-      setMessage({ ok: false, text: (err as ApiFailure["error"]).message });
+      toast.error(errorMessage(err));
     } finally {
       setBusy(null);
     }
@@ -115,7 +112,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   return (
     <DemoContext.Provider
-      value={{ stats, busy, message, jumpHours, setJumpHours, confirmingReset, setConfirmingReset, run: (a) => void run(a) }}
+      value={{ stats, busy, jumpHours, setJumpHours, confirmingReset, setConfirmingReset, run: (a) => void run(a) }}
     >
       {children}
     </DemoContext.Provider>

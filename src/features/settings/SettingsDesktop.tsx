@@ -7,7 +7,7 @@ import { AccountDetails, AccountFallback } from "./Account";
 import { CurrencyPicker } from "./CurrencyPicker";
 import { LogoutButton } from "./LogoutButton";
 import { LanguageSelect, SettingsLoadError, ToneOptions, VoiceSwitch } from "./SettingsControls";
-import { AccountRows, SavingsGoalRow, TrustedContactRow } from "./SettingsRows";
+import { AccountRows, MoneyLockRow, SavingsGoalRow, TrustedContactRow } from "./SettingsRows";
 
 const PANEL = "flex flex-col rounded-[24px] border-[2.5px] border-ink px-[24px] py-[20px] shadow-hard-md";
 
@@ -54,6 +54,7 @@ export function SettingsDesktop() {
               Safety net
             </h2>
             <TrustedContactRow variant="desktop" />
+            <MoneyLockRow variant="desktop" />
           </section>
           <section aria-labelledby="dgoal-h" className={`${PANEL} gap-[10px]`}>
             <SavingsGoalRow variant="desktop" />
@@ -70,6 +71,15 @@ export function SettingsDesktop() {
                 className="flex min-h-[48px] items-center justify-between gap-[12px] border-t border-line text-[15px] font-semibold text-night no-underline"
               >
                 Demo controls
+                <ChevronRightIcon />
+              </Link>
+            )}
+            {publicEnv.DEMO_MODE && (
+              <Link
+                href={ROUTES.ANALYST}
+                className="flex min-h-[48px] items-center justify-between gap-[12px] border-t border-line text-[15px] font-semibold text-night no-underline"
+              >
+                Bank analyst queue
                 <ChevronRightIcon />
               </Link>
             )}

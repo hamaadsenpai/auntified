@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
 import { askService } from "@/services/ask.service";
 import { useSettings } from "@/store/data-hooks";
 import { useSettingsStore } from "@/store/settings.store";
-import type { ApiFailure } from "@/types/api";
 import type { AskTurn } from "@/types/ask";
-import { speak } from "@/utils";
+import { errorMessage, speak } from "@/utils";
 
 /** Shown above the chat; not sent, and makes no claim about the user's data. */
 export const INTRO = "Ask me anything about your money. I'll check your ledger before I answer.";
@@ -20,14 +20,13 @@ export function useAskChat() {
   const [transcript, setTranscript] = useState<AskTurn[]>([]);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   // Loads settings so voiceReplies is known; send reads the store directly for fresh values.
   useSettings();
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [transcript, pending, error]);
+  }, [transcript, pending]);
 
   async function send(question: string) {
     const text = question.trim().slice(0, MAX_LENGTH);
@@ -36,7 +35,6 @@ export function useAskChat() {
     setTranscript(next);
     setDraft("");
     setPending(true);
-    setError(null);
     try {
       const { reply } = await askService.send({ transcript: next.slice(-MAX_TURNS) });
       setTranscript([...next, { role: "auntie", text: reply }]);
@@ -47,7 +45,7 @@ export function useAskChat() {
       // Put the question back so it can be sent again.
       setTranscript(transcript);
       setDraft(text);
-      setError((err as ApiFailure["error"])?.message ?? "Something went wrong. Try again.");
+      toast.error(errorMessage(err));
     } finally {
       setPending(false);
     }
@@ -58,5 +56,5 @@ export function useAskChat() {
     void send(draft);
   }
 
-  return { transcript, draft, setDraft, pending, error, endRef, send, handleSubmit };
+  return { transcript, draft, setDraft, pending, endRef, send, handleSubmit };
 }

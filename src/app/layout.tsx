@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fredoka, Nunito } from "next/font/google";
+import { Toaster } from "@/components/ui";
 import { StoreHydration } from "@/store";
 import "./globals.css";
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <StoreHydration />
         {children}
+        <Toaster />
       </body>
     </html>
   );

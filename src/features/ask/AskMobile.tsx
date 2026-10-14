@@ -33,7 +33,7 @@ function AuntieTurn({ children }: { children: string }) {
 }
 
 export function AskMobile() {
-  const { transcript, draft, setDraft, pending, error, endRef, send, handleSubmit } = useAskChat();
+  const { transcript, draft, setDraft, pending, endRef, send, handleSubmit } = useAskChat();
 
   return (
     <>
@@ -47,11 +47,6 @@ export function AskMobile() {
           turn.role === "user" ? <UserBubble key={i}>{turn.text}</UserBubble> : <AuntieTurn key={i}>{turn.text}</AuntieTurn>,
         )}
         {pending && <p className="m-0 text-[14px] font-medium text-muted">Auntie is checking your ledger…</p>}
-        {error && (
-          <p role="alert" className="m-0 rounded-[14px] border-[1.5px] border-brick px-[14px] py-[10px] text-[14px] font-semibold text-brick">
-            {error}
-          </p>
-        )}
         <div ref={endRef}></div>
       </main>
       <div className="flex flex-none flex-col gap-[8px] px-[16px] pb-[12px]">

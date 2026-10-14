@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Button, Select } from "@/components/ui";
+import { ROUTES } from "@/constants";
 import { DEMO_JUMPS } from "@/constants/demo";
 import type { DemoAction } from "@/types/demo";
 import { cn } from "@/utils";
@@ -57,6 +58,16 @@ export function ActionButton({ action, children }: { action: "seed" | "fire" | "
   );
 }
 
+/** Opens the scam scanner on a fake bank text, which it checks straight away. */
+export function FireSmsButton() {
+  const { busy } = useDemo();
+  return (
+    <Button href={`${ROUTES.SCAN}?sample=1`} className={cn(ACTION_BUTTON, "px-[14px]", busy !== null && "pointer-events-none opacity-60")}>
+      Fire
+    </Button>
+  );
+}
+
 export function JumpSelect({ id, className }: { id: string; className?: string }) {
   const { busy, jumpHours, setJumpHours } = useDemo();
   return (
@@ -104,15 +115,5 @@ export function ResetControl() {
         Reset all
       </button>
     </span>
-  );
-}
-
-/** The last action's outcome. Always rendered, so screen readers hear each new message. */
-export function DemoMessage({ className }: { className?: string }) {
-  const { message } = useDemo();
-  return (
-    <p role="status" aria-live="polite" className={cn("m-0 text-[14px] font-semibold", message?.ok === false ? "text-brick" : "text-teal", className)}>
-      {message?.text}
-    </p>
   );
 }

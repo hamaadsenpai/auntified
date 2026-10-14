@@ -3,7 +3,6 @@
 import { BottomNav, Screen } from "@/components/layout";
 import { PayeeForm } from "./PayeeForm";
 import { PayeesDesktop } from "./PayeesDesktop";
-import { PayeeError } from "./usePayee";
 import { PayeeRows, RecentBills, usePayeesList, WhoOwesWhom } from "./usePayeesList";
 import { SplitForm } from "./SplitForm";
 
@@ -32,7 +31,6 @@ export function PayeesScreen() {
             <h2 className={H2}>Your payees</h2>
             <PayeeRows m={m} />
           </section>
-          <PayeeError error={m.error} />
           <section className="flex flex-col gap-[8px]">
             <div className="flex items-center justify-between gap-[12px]">
               <h2 className={H2}>Who owes whom</h2>

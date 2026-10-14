@@ -19,6 +19,8 @@ export type AccountSettings = {
   voiceReplies: boolean;
   trustedContact: TrustedContact | null;
   savingsGoal: SavingsGoal | null;
+  /** Money Lock: this much of the main account can't be sent by transfer. 0 is off. */
+  lockedSgd: number;
 };
 
 /**

@@ -20,7 +20,7 @@ const WEEK_MS = 7 * DAY_MS;
 const WINDOW_DAYS = 90;
 const MAX_WORDS = 80;
 
-const TONES: Record<AccountSettings["tone"], string> = {
+export const TONES: Record<AccountSettings["tone"], string> = {
   roast: "Tease them about their spending with cheeky auntie roasts, but stay warm underneath and never cruel.",
   gentle: "Be gentle and encouraging. No roasting; point out habits kindly and praise progress.",
 };

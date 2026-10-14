@@ -3,13 +3,14 @@
 import { Select, type SelectVariant } from "@/components/ui";
 import { useCurrency, useSettings } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
-import { accountOf, accountsOf } from "@/utils/accounts";
+import { accountOf, accountsOf, sendableSgd } from "@/utils/accounts";
 import { formatMoney } from "@/utils/format";
 
-/** The account paying for the draft, or the main one if the picked account was removed. */
+/** The account paying for the draft, or the main one if the picked account was removed. Its balance is what it can send (less Money Lock). */
 export function useFromAccount() {
   const { settings } = useSettings();
-  return accountOf(settings, usePayDraftStore((s) => s.fromAccountId));
+  const from = accountOf(settings, usePayDraftStore((s) => s.fromAccountId));
+  return { ...from, balanceSgd: sendableSgd(settings, from) };
 }
 
 /** <option> only accepts plain text, so the balance is formatted here rather than with <Money>. */

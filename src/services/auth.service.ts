@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -12,13 +13,13 @@ import { ENDPOINTS } from "@/constants";
 import { getClientAuth } from "@/lib/firebase/client";
 
 /** Hands the fresh ID token to the server, which sets the httpOnly session cookie. */
-async function startSession(user: User) {
+async function startSession(user: User, acceptedTerms = false) {
   // force=true so a name just set with updateProfile is in the token's claims.
   const idToken = await user.getIdToken(true);
   const res = await fetch(ENDPOINTS.SESSION, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken }),
+    body: JSON.stringify({ idToken, acceptedTerms }),
   });
   // The cookie is the session now; drop the in-memory client user either way.
   await signOut(getClientAuth());
@@ -34,10 +35,10 @@ export const authService = {
     await startSession(user);
   },
 
-  async signUpWithEmail(name: string, email: string, password: string) {
+  async signUpWithEmail(name: string, email: string, password: string, acceptedTerms: boolean) {
     const { user } = await createUserWithEmailAndPassword(getClientAuth(), email, password);
     if (name) await updateProfile(user, { displayName: name });
-    await startSession(user);
+    await startSession(user, acceptedTerms);
   },
 
   async signInWithGoogle() {
@@ -45,6 +46,10 @@ export const authService = {
     provider.setCustomParameters({ prompt: "select_account" });
     const { user } = await signInWithPopup(getClientAuth(), provider);
     await startSession(user);
+  },
+
+  async sendPasswordReset(email: string) {
+    await sendPasswordResetEmail(getClientAuth(), email);
   },
 
   async signOut() {
@@ -55,6 +60,7 @@ export const authService = {
 const MESSAGES: Record<string, string> = {
   "auth/invalid-credential": "That email and password don't match.",
   "auth/invalid-email": "That email doesn't look right.",
+  "auth/missing-email": "Type your email first, then tap Forgot password.",
   "auth/user-disabled": "This account has been switched off.",
   "auth/email-already-in-use": "There's already an account with that email. Log in instead.",
   "auth/weak-password": "Pick a stronger password, at least 8 characters.",

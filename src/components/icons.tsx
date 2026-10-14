@@ -83,6 +83,12 @@ export function PeopleIcon({ size = 20, className }: IconProps) {
   );
 }
 
+export function ShieldIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg aria-hidden="true" className={cn("text-teal", className)} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6z"></path><path d="M8.8 12.2l2.2 2.2 4.2-4.4"></path></svg>
+  );
+}
+
 /** Google's "G" mark. Keeps the brand colors, so it ignores `currentColor`. */
 export function GoogleIcon({ size = 20, className }: IconProps) {
   return (
