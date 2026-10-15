@@ -11,7 +11,7 @@ import { LANGUAGES } from "./languages";
 type Variant = "mobile" | "desktop";
 
 const TONES = [
-  { value: "roast", label: "Roast", hint: "Full honesty. She will mention the bubble tea.", mood: "meh" },
+  { value: "roast", label: "Roast", hint: "Full honesty. She will mention the short eats.", mood: "meh" },
   { value: "gentle", label: "Gentle", hint: "Same advice, softer landing.", mood: "sleep" },
 ] as const;
 

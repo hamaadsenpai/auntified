@@ -37,7 +37,7 @@ export function RoastDesktop() {
               <AuntieBao mood="meh" width={110} height={102} />
               <div className="mb-[60px] flex flex-col items-start gap-[4px]">
                 <span className="rounded-full border-[2.5px] border-ink bg-white px-[16px] py-[8px] font-display text-[16px] font-semibold whitespace-nowrap">
-                  {auntie.badge ?? "aiyoh..."}
+                  {auntie.badge ?? "aney..."}
                 </span>
                 <span className="ml-[-6px] h-[10px] w-[10px] rounded-[5px] border-[2.5px] border-ink bg-white"></span>
               </div>

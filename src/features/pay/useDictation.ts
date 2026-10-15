@@ -45,7 +45,7 @@ export function useDictation(onText: (text: string) => void) {
     const Ctor = recognizer();
     if (!Ctor) return;
     const r = new Ctor();
-    r.lang = navigator.language || "en-SG";
+    r.lang = navigator.language || "en-LK";
     r.interimResults = false;
     r.continuous = false;
     r.onresult = (e) => latest.current(e.results[0][0].transcript);

@@ -20,8 +20,8 @@ export type TransferFacts = {
   medianTransferSgd: number | null;
   /** The paying account's balance less any Money Lock. */
   availableSgd: number;
-  /** Hour of day it's being paid, Singapore time: 22.5 is 10:30pm. */
-  hourSgt: number;
+  /** Hour of day it's being paid, Sri Lanka time: 22.5 is 10:30pm. */
+  hourSlt: number;
   /** 10th to 90th percentile of the hours of the user's transfers, in whole hours; null under 3 transfers. */
   usualHours: { from: number; to: number } | null;
 };
@@ -30,11 +30,11 @@ const SENT: TransferStatus[] = ["passed", "overridden"];
 /** Fewer than this and an hour range says nothing (same as Patterns). */
 const MIN_TRANSFERS = 3;
 const HOUR_MS = 3_600_000;
-// shortcut: hours are Singapore time (the home market) while Patterns uses the browser's zone; store the user's zone if users go abroad.
-const SGT_MS = 8 * HOUR_MS;
+// shortcut: hours are Sri Lanka time (the home market) while Patterns uses the browser's zone; store the user's zone if users go abroad.
+const SLT_MS = 5.5 * HOUR_MS;
 
-/** Hour of day in Singapore at `ms`, with minutes as a fraction. */
-export const hourSgt = (ms: number) => ((ms + SGT_MS) % (24 * HOUR_MS)) / HOUR_MS;
+/** Hour of day in Sri Lanka at `ms`, with minutes as a fraction. */
+export const hourSlt = (ms: number) => ((ms + SLT_MS) % (24 * HOUR_MS)) / HOUR_MS;
 
 /** 9.5 → "9:30am", 22 → "10pm". */
 function hourLabel(hour: number): string {
@@ -96,8 +96,8 @@ export async function buildTransferFacts(
     scamReports: payee.reported ? 1 : 0,
     medianTransferSgd: median(sent.map((d) => d.get("amountSgd")).filter((v): v is number => typeof v === "number")),
     availableSgd: sendableFrom(userSnap.data(), from),
-    hourSgt: hourSgt(Date.now()),
-    usualHours: usualHours(hours.map(hourSgt)),
+    hourSlt: hourSlt(Date.now()),
+    usualHours: usualHours(hours.map(hourSlt)),
   };
 }
 
@@ -118,11 +118,11 @@ export function scoreRules(t: TransferFacts): { score: number; flags: string[]; 
   if (multiple >= 3) add("large_amount", 12, `${Math.round(multiple)}x your usual transfer`);
   if (t.scamReports > 0) add("scam_reports", 8, `${t.scamReports} scam report${t.scamReports === 1 ? "" : "s"} on this payee`);
   // Late night (10pm to 6am) or outside the user's own usual hours.
-  const late = t.hourSgt >= 22 || t.hourSgt < 6;
+  const late = t.hourSlt >= 22 || t.hourSlt < 6;
   const usual = t.usualHours;
-  const unusual = usual !== null && (t.hourSgt < usual.from || t.hourSgt > usual.to);
+  const unusual = usual !== null && (t.hourSlt < usual.from || t.hourSlt > usual.to);
   if (late || unusual) {
-    const when = `Paying at ${hourLabel(t.hourSgt)}`;
+    const when = `Paying at ${hourLabel(t.hourSlt)}`;
     add("odd_hour", 6, unusual ? `${when}, outside your usual ${hourLabel(usual.from)} to ${hourLabel(usual.to)}` : `${when}, late at night`);
   }
   const urgent = URGENCY.exec(t.reference);

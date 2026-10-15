@@ -2,7 +2,7 @@
 export type Payee = {
   id: string;
   name: string;
-  /** How the bank reaches them, as entered, e.g. "PayNow 9123 8821". */
+  /** How the bank reaches them, as entered, e.g. "BOC 0081 2345 67". */
   account: string;
   /** Who they are to the user, e.g. "Mum". May be "". */
   note: string;

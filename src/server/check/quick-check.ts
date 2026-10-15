@@ -1,12 +1,15 @@
 import "server-only";
 import { z } from "zod";
 import { ThinkingLevel } from "@google/genai";
+import { DEFAULT_CURRENCY, getCurrency } from "@/constants/currencies";
+import { LANGUAGE_GUIDE } from "@/features/settings/languages";
 import { generate } from "@/lib/ai/gemini";
 import { ApiError } from "@/lib/api/errors";
 import { getTransfer, notPending, saveCheckOutcome } from "@/server/repositories/transfers.repository";
-import { getSettings } from "@/server/repositories/users.repository";
+import { getSettings, getUserProfile } from "@/server/repositories/users.repository";
 import type { CheckResult, CheckTurn, CheckVerdict, RiskSignal } from "@/types/check";
 import type { AccountSettings } from "@/types/settings";
+import { formatMoney } from "@/utils/format";
 import { buildTransferFacts, scoreRules, type TransferFacts } from "./transfer";
 
 const MAX_QUESTIONS = 3;
@@ -19,12 +22,12 @@ export const SCAM_TONES: Record<AccountSettings["tone"], string> = {
 };
 
 function systemPrompt(settings: AccountSettings) {
-  return `You are Auntie Kumari, a sharp, caring Singaporean auntie who checks bank transfers for scams before they go through.
+  return `You are Auntie Kumari, a sharp, caring Sri Lankan auntie who checks bank transfers for scams before they go through.
 You are holding a transfer and asking the sender up to ${MAX_QUESTIONS} short questions to find out if they are being scammed.
 
 How to ask:
 - One question per turn, at most 15 words.
-- Reply in ${settings.language}. If that is a mixed language like Singlish, keep it easy to follow. Write reasons in the same language.
+- Reply in ${settings.language}. ${LANGUAGE_GUIDE} Write reasons in the same language.
 - ${SCAM_TONES[settings.tone]}
 - Pick the question that best separates a scam from a real payment, given the facts and the answers so far. Look for: who the payee really is, who contacted whom first, pressure to pay now, promised returns, meeting only online, being told to keep it secret, being told to ignore bank warnings.
 - Never ask for a PIN, password, OTP or card number.
@@ -68,13 +71,13 @@ export function verdictFor(score: number): CheckVerdict {
   return "pass";
 }
 
-function describe(t: TransferFacts, signals: RiskSignal[], transcript: CheckTurn[], lastTurn: boolean) {
+function describe(t: TransferFacts, signals: RiskSignal[], transcript: CheckTurn[], lastTurn: boolean, money: (sgd: number) => string) {
   const lines = transcript.map((turn) => `${turn.role === "auntie" ? "Auntie" : "Sender"}: ${turn.text}`);
   return [
     "Transfer on hold:",
-    `- S$${t.amountSgd} to ${t.payeeName}, reference "${t.reference}"`,
-    `- Sender has S$${t.availableSgd} available; ${
-      t.medianTransferSgd === null ? "this is their first transfer" : `their median transfer is S$${t.medianTransferSgd}`
+    `- ${money(t.amountSgd)} to ${t.payeeName}, reference "${t.reference}"`,
+    `- Sender has ${money(t.availableSgd)} available; ${
+      t.medianTransferSgd === null ? "this is their first transfer" : `their median transfer is ${money(t.medianTransferSgd)}`
     }`,
     `Rule flags already raised (points each adds): ${signals.map((s) => `${s.label} (+${s.weight})`).join("; ") || "none"}`,
     "",
@@ -88,7 +91,8 @@ function describe(t: TransferFacts, signals: RiskSignal[], transcript: CheckTurn
  * verdict once she has heard enough. The verdict is saved onto the transfer (a pass sends it).
  */
 export async function runQuickCheck(uid: string, transferId: string, transcript: CheckTurn[]): Promise<CheckResult> {
-  const [held, settings] = await Promise.all([getTransfer(uid, transferId), getSettings(uid)]);
+  const [held, settings, profile] = await Promise.all([getTransfer(uid, transferId), getSettings(uid), getUserProfile(uid)]);
+  const currency = getCurrency(profile?.currency ?? DEFAULT_CURRENCY);
   if (!held) throw ApiError.notFound("Transfer not found.");
   if (held.status !== "pending") throw notPending(held, "This transfer has already been checked.");
   const transfer = await buildTransferFacts(uid, held);
@@ -101,7 +105,7 @@ export async function runQuickCheck(uid: string, transferId: string, transcript:
   let raw: string | undefined;
   try {
     const res = await generate({
-      contents: describe(transfer, rules.signals, transcript, lastTurn),
+      contents: describe(transfer, rules.signals, transcript, lastTurn, (sgd) => formatMoney(sgd, currency)),
       config: {
         systemInstruction: systemPrompt(settings),
         responseMimeType: "application/json",

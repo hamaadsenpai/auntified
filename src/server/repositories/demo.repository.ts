@@ -2,9 +2,10 @@ import "server-only";
 import { io } from "next/cache";
 import { FieldValue, Timestamp, type BulkWriter, type DocumentData, type DocumentReference } from "firebase-admin/firestore";
 import { COLLECTIONS, DEFAULT_SETTINGS, SALARY_SGD } from "@/constants";
+import { lkr } from "@/constants/currencies";
 import { DEMO_FIRE } from "@/constants/demo";
 import { db } from "@/lib/firebase/admin";
-import { hourSgt, scoreRules, usualHours } from "@/server/check/transfer";
+import { hourSlt, scoreRules, usualHours } from "@/server/check/transfer";
 import type { DemoState } from "@/types/demo";
 import type { TransferStatus } from "@/types/transfer";
 import { MAIN_ACCOUNT_ID } from "@/utils/accounts";
@@ -14,8 +15,8 @@ import { createTransfer } from "./transfers.repository";
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
-// Seeded days are Singapore days, the app's home market, whatever timezone the server runs in.
-const SGT = 8 * HOUR;
+// Seeded days are Sri Lanka days, the app's home market, whatever timezone the server runs in.
+const SLT = 5.5 * HOUR;
 
 const userRef = (uid: string) => db.collection(COLLECTIONS.USERS).doc(uid);
 const DATA = [COLLECTIONS.PAYEES, COLLECTIONS.EXPENSES, COLLECTIONS.TRANSFERS, COLLECTIONS.CREDITS, COLLECTIONS.BILLS];
@@ -23,8 +24,7 @@ const DATA = [COLLECTIONS.PAYEES, COLLECTIONS.EXPENSES, COLLECTIONS.TRANSFERS, C
 const offsetOf = (data: DocumentData | undefined) => (typeof data?.clockOffsetMs === "number" ? data.clockOffsetMs : 0);
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const pick = <T>(items: readonly T[]) => items[Math.floor(Math.random() * items.length)];
-const round = (n: number, places = 2) => Math.round(n * 10 ** places) / 10 ** places;
-const ymd = (ms: number) => new Date(ms + SGT).toISOString().slice(0, 10);
+const ymd = (ms: number) => new Date(ms + SLT).toISOString().slice(0, 10);
 
 function median(values: number[]): number | null {
   if (values.length === 0) return null;
@@ -61,22 +61,22 @@ export async function resetDemo(uid: string): Promise<DemoState> {
 }
 
 const SPENDS = [
-  { category: "Food delivery", names: ["GrabFood", "foodpanda", "Deliveroo"], min: 12, max: 38 },
-  { category: "Rides", names: ["Grab ride", "Gojek", "ComfortDelGro"], min: 8, max: 26 },
-  { category: "Bubble tea", names: ["LiHO", "KOI Thé", "Gong Cha"], min: 4.5, max: 7.8 },
-  { category: "Shopping", names: ["Shopee", "Lazada", "Uniqlo"], min: 15, max: 120 },
-  { category: "Groceries", names: ["FairPrice", "Sheng Siong", "Cold Storage"], min: 22, max: 85 },
-  { category: "Other", names: ["Kopitiam", "Guardian", "Popular"], min: 3, max: 25 },
+  { category: "Food delivery", names: ["PickMe Food", "Uber Eats", "Pizza Hut"], min: 1500, max: 4000 },
+  { category: "Rides", names: ["PickMe", "Uber", "Kangaroo Cabs"], min: 500, max: 2000 },
+  { category: "Short eats", names: ["Perera & Sons", "The Fab", "Green Cabin"], min: 300, max: 900 },
+  { category: "Shopping", names: ["Daraz", "Odel", "Cotton Collection"], min: 2000, max: 12000 },
+  { category: "Groceries", names: ["Keells", "Cargills Food City", "Arpico"], min: 2500, max: 9000 },
+  { category: "Other", names: ["Tea kade", "Healthguard", "Vijitha Yapa"], min: 200, max: 2500 },
 ] as const;
 
 const PAYEES = {
-  rent: { name: "Mr Lim", account: "DBS 012-34567-8", note: "Landlord" },
-  mum: { name: "Mum", account: "PayNow 9123 8821", note: "Mum" },
-  gym: { name: "ActiveSG", account: "PayNow 9001 2234", note: "Gym" },
-  friend: { name: "Jia Hui", account: "PayNow 9876 5432", note: "Friend" },
-  bro: { name: "Wei Ming", account: "PayNow 8234 1190", note: "Brother" },
-  crypto: { name: "Profit Desk Asia", account: "PayNow 8812 0457", note: "" },
-  parcel: { name: "SG Parcel Clearance", account: "PayNow 8301 6672", note: "" },
+  rent: { name: "Mr Fernando", account: "BOC 0081 2345 67", note: "Landlord" },
+  mum: { name: "Amma", account: "Sampath 1029 5734 8812", note: "Mum" },
+  gym: { name: "Iron Fit Gym", account: "ComBank 8001 4423 19", note: "Gym" },
+  friend: { name: "Nethmi", account: "HNB 0270 1983 4456", note: "Friend" },
+  bro: { name: "Malli", account: "NSB 1003 2287 6610", note: "Brother" },
+  crypto: { name: "Profit Desk Asia", account: "Peoples 0472 9918 0457", note: "" },
+  parcel: { name: "SL Parcel Clearance", account: "BOC 0093 6672 01", note: "" },
 };
 type PayeeKey = keyof typeof PAYEES;
 
@@ -90,14 +90,14 @@ type Planned = {
   reasons: string[];
 };
 
-const BALANCE_SGD = 6240.35;
+const BALANCE_SGD = lkr(412_650);
 
 /** Replaces the user's data with about 90 days of history: payees, everyday spending, sent transfers and two stopped scams. */
 export async function seedDemo(uid: string): Promise<DemoState> {
   await resetDemo(uid);
   const now = Date.now();
-  const today = Math.floor((now + SGT) / DAY) * DAY - SGT;
-  /** A time `daysAgo` Singapore days back, at `hour` o'clock plus a few random minutes. */
+  const today = Math.floor((now + SLT) / DAY) * DAY - SLT;
+  /** A time `daysAgo` Sri Lanka days back, at `hour` o'clock plus a few random minutes. */
   const at = (daysAgo: number, hour: number) => today - daysAgo * DAY + hour * HOUR + Math.floor(rand(0, 50)) * MINUTE;
 
   const expenses: DocumentData[] = [];
@@ -106,12 +106,12 @@ export async function seedDemo(uid: string): Promise<DemoState> {
       { length: 1 + Math.floor(rand(0, 3)) },
       () => {
         const s = pick(SPENDS);
-        return { name: pick(s.names), category: s.category, amountSgd: round(rand(s.min, s.max), 1), at: at(d, Math.floor(rand(8, 22))) };
+        return { name: pick(s.names), category: s.category, amountSgd: lkr(Math.round(rand(s.min, s.max) / 10) * 10), at: at(d, Math.floor(rand(8, 22))) };
       },
     );
     if (d % 30 === 12) {
-      items.push({ name: "Netflix", category: "Subscriptions", amountSgd: 19.98, at: at(d, 9) });
-      items.push({ name: "Spotify", category: "Subscriptions", amountSgd: 11.98, at: at(d, 9) });
+      items.push({ name: "Netflix", category: "Subscriptions", amountSgd: lkr(2_690), at: at(d, 9) });
+      items.push({ name: "Spotify", category: "Subscriptions", amountSgd: lkr(1_090), at: at(d, 9) });
     }
     for (const e of items) {
       if (e.at > now) continue;
@@ -123,15 +123,15 @@ export async function seedDemo(uid: string): Promise<DemoState> {
   const sent = (payee: PayeeKey, days: number[], amount: () => number, reference: string, hour: number): Planned[] =>
     days.map((d) => ({ payee, at: at(d, hour), amountSgd: amount(), reference, status: "passed", modelScore: Math.floor(rand(2, 9)), reasons: [] }));
   const planned: Planned[] = [
-    ...sent("rent", [88, 58, 28], () => 1200, "Rent", 10),
-    ...sent("mum", [85, 55, 25], () => 500, "Monthly allowance", 19),
-    ...sent("gym", [80, 50, 20], () => 45, "Membership", 12),
-    ...sent("friend", [83, 72, 61, 47, 36, 22, 12, 4], () => round(rand(18, 60), 1), "Dinner split", 21),
-    ...sent("bro", [66, 9], () => 100, "Concert tickets", 20),
+    ...sent("rent", [88, 58, 28], () => lkr(65_000), "Rent", 10),
+    ...sent("mum", [85, 55, 25], () => lkr(25_000), "Monthly allowance", 19),
+    ...sent("gym", [80, 50, 20], () => lkr(8_500), "Membership", 12),
+    ...sent("friend", [83, 72, 61, 47, 36, 22, 12, 4], () => lkr(Math.round(rand(2_500, 7_500) / 100) * 100), "Dinner split", 21),
+    ...sent("bro", [66, 9], () => lkr(12_000), "Concert tickets", 20),
     {
       payee: "crypto",
       at: at(40, 22),
-      amountSgd: 2500,
+      amountSgd: lkr(600_000),
       reference: "Unlock my profits",
       status: "blocked",
       modelScore: 50,
@@ -140,11 +140,11 @@ export async function seedDemo(uid: string): Promise<DemoState> {
     {
       payee: "parcel",
       at: at(18, 14),
-      amountSgd: 380,
+      amountSgd: lkr(45_000),
       reference: "Customs clearance fee",
       status: "cancelled",
       modelScore: 24,
-      reasons: ["Fee asked for by text message", "Couriers don't collect fees by PayNow"],
+      reasons: ["Fee asked for by text message", "Couriers don't collect fees by bank transfer"],
     },
   ];
   planned.sort((a, b) => a.at - b.at);
@@ -172,14 +172,14 @@ export async function seedDemo(uid: string): Promise<DemoState> {
       scamReports: 0,
       medianTransferSgd: median(amountsSent),
       availableSgd: BALANCE_SGD,
-      hourSgt: hourSgt(t.at),
+      hourSlt: hourSlt(t.at),
       usualHours: usualHours(hoursSoFar),
     });
-    hoursSoFar.push(hourSgt(t.at));
+    hoursSoFar.push(hourSlt(t.at));
     const isNew = p.count === 0;
     if (t.status === "passed") {
       p.count += 1;
-      p.total = round(p.total + t.amountSgd);
+      p.total += t.amountSgd;
       amountsSent.push(t.amountSgd);
     }
     const reasons = t.reasons.length ? t.reasons : [isNew ? "New payee, but an everyday reason" : "Known payee, usual amount"];
@@ -217,7 +217,7 @@ export async function seedDemo(uid: string): Promise<DemoState> {
     ...transfers.map((t) => w.create(user.collection(COLLECTIONS.TRANSFERS).doc(), t)),
     w.set(
       user,
-      { balanceSgd: BALANCE_SGD, savingsGoal: { targetSgd: 5000, savedSgd: 1640, deadline: ymd(now + 75 * DAY) } },
+      { balanceSgd: BALANCE_SGD, savingsGoal: { targetSgd: lkr(1_200_000), savedSgd: lkr(380_000), deadline: ymd(now + 75 * DAY) } },
       { merge: true },
     ),
   ]);
@@ -231,7 +231,7 @@ export async function fireScam(uid: string): Promise<DemoState> {
   const payee = user.collection(COLLECTIONS.PAYEES).doc();
   await payee.set({
     name: "Elite Crypto Desk",
-    account: "PayNow 8765 4321",
+    account: "Peoples 0488 7654 3210",
     note: "",
     reported: false,
     createdAt: Timestamp.fromMillis(Date.now() - DEMO_FIRE.PAYEE_AGE_MIN * MINUTE),
@@ -282,7 +282,7 @@ export async function jumpClock(uid: string, hours: number): Promise<DemoState> 
       user,
       {
         clockOffsetMs: offset,
-        ...(deadline && days > 0 && { savingsGoal: { ...goal, deadline: ymd(Date.parse(`${deadline}T00:00:00+08:00`) - days * DAY) } }),
+        ...(deadline && days > 0 && { savingsGoal: { ...goal, deadline: ymd(Date.parse(`${deadline}T00:00:00+05:30`) - days * DAY) } }),
       },
       { merge: true },
     ),

@@ -1,5 +1,7 @@
+import { lkr } from "./currencies";
+
 /** The scam payment Fire sends through the real check. The /demo copy reads these, so it stays true. */
-export const DEMO_FIRE = { AMOUNT_SGD: 1850, PAYEE_AGE_MIN: 6 } as const;
+export const DEMO_FIRE = { AMOUNT_SGD: lkr(450_000), PAYEE_AGE_MIN: 6 } as const;
 
 /** How far Jump can move the demo clock. */
 export const DEMO_JUMPS = [
@@ -10,4 +12,4 @@ export const DEMO_JUMPS = [
 
 /** The scam text Fire drops into the message scanner. */
 export const DEMO_SCAM_SMS =
-  "DBS: Your account has been temporarily suspended due to unusual activity. Verify your identity within 24 hours to avoid permanent closure: https://dbs-secure-verify.top/login";
+  "BOC: Your account has been temporarily suspended due to unusual activity. Verify your identity within 24 hours to avoid permanent closure: https://boc-secure-verify.top/login";

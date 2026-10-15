@@ -16,9 +16,14 @@ export type Currency = {
   rate: number;
 };
 
-export const DEFAULT_CURRENCY = "SGD";
+// Sri Lanka is the home market. Amounts are still stored in SGD (the base the rates hang off).
+export const DEFAULT_CURRENCY = "LKR";
+const LKR_PER_SGD = 232;
 
-export const CURRENCY_REGIONS: CurrencyRegion[] = ["Southeast Asia", "South Asia", "East Asia", "Oceania"];
+/** Rupees to the SGD every amount is stored in, so demo figures can be written as Sri Lankans see them. */
+export const lkr = (rupees: number) => rupees / LKR_PER_SGD;
+
+export const CURRENCY_REGIONS: CurrencyRegion[] = ["South Asia", "Southeast Asia", "East Asia", "Oceania"];
 
 export const CURRENCIES: Currency[] = [
   { code: "SGD", name: "Singapore dollar", country: "Singapore", region: "Southeast Asia", symbol: "S$", decimals: 2, rate: 1 },
@@ -33,7 +38,7 @@ export const CURRENCIES: Currency[] = [
   { code: "MMK", name: "Myanmar kyat", country: "Myanmar", region: "Southeast Asia", symbol: "K", decimals: 0, rate: 1620 },
 
   { code: "INR", name: "Indian rupee", country: "India", region: "South Asia", symbol: "₹", decimals: 2, lakh: true, rate: 66 },
-  { code: "LKR", name: "Sri Lankan rupee", country: "Sri Lanka", region: "South Asia", symbol: "Rs ", decimals: 2, rate: 232 },
+  { code: "LKR", name: "Sri Lankan rupee", country: "Sri Lanka", region: "South Asia", symbol: "Rs. ", decimals: 0, rate: LKR_PER_SGD },
   { code: "PKR", name: "Pakistani rupee", country: "Pakistan", region: "South Asia", symbol: "Rs ", decimals: 2, lakh: true, rate: 217 },
   { code: "BDT", name: "Bangladeshi taka", country: "Bangladesh", region: "South Asia", symbol: "৳", decimals: 2, lakh: true, rate: 94 },
   { code: "NPR", name: "Nepalese rupee", country: "Nepal", region: "South Asia", symbol: "Rs ", decimals: 2, lakh: true, rate: 106 },

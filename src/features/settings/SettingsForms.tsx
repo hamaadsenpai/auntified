@@ -23,7 +23,7 @@ type FormProps = {
 function toSgd(value: string, currency: Currency, { positive = false } = {}): number | null {
   const amount = Number(value);
   if (value.trim() === "" || !Number.isFinite(amount) || amount < 0 || (positive && amount === 0)) return null;
-  const sgd = Math.round((amount / currency.rate) * 100) / 100;
+  const sgd = amount / currency.rate;
   return sgd > LIMITS.MAX_AMOUNT_SGD ? null : sgd;
 }
 

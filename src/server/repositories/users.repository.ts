@@ -6,6 +6,7 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import { COLLECTIONS, DEFAULT_SETTINGS, LIMITS, SALARY_SGD } from "@/constants";
 import { ApiError } from "@/lib/api/errors";
 import { db } from "@/lib/firebase/admin";
+import { LANGUAGES } from "@/features/settings/languages";
 import type { AccountSettings, UpdateSettings } from "@/types/settings";
 import type { Preferences, UpdatePreferences, UserProfile } from "@/types/user";
 import { accountsFrom } from "./accounts.repository";
@@ -80,7 +81,8 @@ export async function getSettings(uid: string): Promise<AccountSettings> {
     balanceSgd: pick("balanceSgd"),
     accounts: pick("accounts"),
     tone: pick("tone"),
-    language: pick("language"),
+    // Older accounts saved languages that are gone (Singlish and the like).
+    language: LANGUAGES.includes(data.language) ? data.language : DEFAULT_SETTINGS.language,
     voiceReplies: pick("voiceReplies"),
     trustedContact: pick("trustedContact"),
     savingsGoal: pick("savingsGoal"),

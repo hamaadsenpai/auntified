@@ -41,7 +41,7 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
     key: "patterns",
     title: "Your patterns",
     summary: "See where this week runs above your normal, category by category.",
-    points: ["Food delivery, rides and bubble tea", "This week against your usual", "Median transfer, p95 and usual hours"],
+    points: ["Food delivery, rides and short eats", "This week against your usual", "Median transfer, p95 and usual hours"],
     href: ROUTES.PATTERNS,
   },
   {
@@ -55,7 +55,7 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
     key: "settings",
     title: "Your tone, language and currency",
     summary: "Pick how blunt Auntie is, the language she speaks and the currency you see.",
-    points: ["33 currencies across Asia and Oceania", "English, Singlish, Manglish, Taglish or Hinglish", "Roast or Gentle tone"],
+    points: ["Rupees first, plus 32 more currencies", "Sri Lankan English, English, Sinhala or Tamil", "Roast or Gentle tone"],
     href: ROUTES.SETTINGS,
   },
 ];

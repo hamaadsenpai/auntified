@@ -14,7 +14,7 @@ export function WeekSentence({ week, tone }: { week: Week; tone: Tone }) {
   return (
     <>
       {plural(week.count, "spend")} this week, <Money sgd={week.totalSgd} />. Top: {week.top.category}, <Money sgd={week.top.totalSgd} />.{" "}
-      {tone === "roast" ? "You think money grows on pandan trees?" : "Not bad, but keep an eye on it."}
+      {tone === "roast" ? "You think money grows on coconut trees, bung?" : "Not bad, but keep an eye on it."}
     </>
   );
 }

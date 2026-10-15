@@ -63,7 +63,7 @@ export function ExpenseForm({ initial, submitLabel, onSubmit, onCancel }: Expens
         <Input
           id={`${id}-name`}
           variant="soft"
-          placeholder="e.g. Bubble tea"
+          placeholder="e.g. Short eats"
           maxLength={LIMITS.NAME}
           required
           value={values.name}

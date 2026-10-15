@@ -26,7 +26,7 @@ export function RoastMobile() {
             </div>
             <div className="flex flex-col items-end gap-[2px]">
               <span className="rounded-full border-[2.5px] border-ink bg-white px-[11px] py-[5px] font-display text-[13px] font-semibold whitespace-nowrap">
-                {auntie.badge ?? "aiyoh..."}
+                {auntie.badge ?? "aney..."}
               </span>
               <AuntieBao mood="meh" width={72} height={67} />
             </div>

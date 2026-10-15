@@ -12,14 +12,14 @@ const STEPS = [
 const REQUEST = `{
   "event_id": "evt_8f21c0",
   "account": "acc_4417",
-  "amount": { "value": 1850.00, "currency": "SGD" },
+  "amount": { "value": 450000, "currency": "LKR" },
   "payee": {
     "id": "pn_8821",
-    "name": "Kelvin Tan",
-    "added_at": "2026-10-11T23:46:10+08:00"
+    "name": "Kasun Perera",
+    "added_at": "2026-10-11T23:46:10+05:30"
   },
   "reference": "Investment slot deposit",
-  "initiated_at": "2026-10-11T23:52:04+08:00"
+  "initiated_at": "2026-10-11T23:52:04+05:30"
 }`;
 
 const RESPONSE = `{
@@ -28,7 +28,7 @@ const RESPONSE = `{
   "score": 86,
   "split": { "rules": 46, "model": 40 },
   "pattern": "investment_urgent_slot",
-  "cool_down_until": "2026-10-12T23:52:04+08:00",
+  "cool_down_until": "2026-10-12T23:52:04+05:30",
   "turns": 3
 }`;
 

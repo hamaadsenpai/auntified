@@ -1,9 +1,10 @@
 import type { AccountSettings } from "@/types/settings";
+import { lkr } from "./currencies";
 
 export const EXPENSE_CATEGORIES = [
   "Food delivery",
   "Rides",
-  "Bubble tea",
+  "Short eats",
   "Subscriptions",
   "Bills",
   "Insurance",
@@ -18,7 +19,7 @@ export const DEFAULT_SETTINGS: AccountSettings = {
   balanceSgd: 0,
   accounts: [],
   tone: "roast",
-  language: "Singlish",
+  language: "Sri Lankan English",
   voiceReplies: true,
   trustedContact: null,
   savingsGoal: null,
@@ -29,7 +30,7 @@ export const DEFAULT_SETTINGS: AccountSettings = {
 export const COOL_OFF_HOURS = 12;
 
 /** The simulated monthly salary: a new user's first credit, and the Settings "Pay salary" amount. */
-export const SALARY_SGD = 3500;
+export const SALARY_SGD = lkr(300_000);
 
 /** Validation limits shared by the forms and the zod schemas. */
 export const LIMITS = {

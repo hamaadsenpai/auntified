@@ -100,8 +100,8 @@ export async function importStatement(uid: string, { mimeType, data }: Statement
   const lines = json.entries.flatMap((e) => {
     const parsed = entry.safeParse(e);
     if (!parsed.success) return [];
-    const at = Date.parse(`${parsed.data.date}T12:00:00+08:00`);
-    const amountSgd = Math.round((parsed.data.amount / currency.rate) * 100) / 100;
+    const at = Date.parse(`${parsed.data.date}T12:00:00+05:30`);
+    const amountSgd = parsed.data.amount / currency.rate;
     if (Number.isNaN(at) || at > now + DAY_MS || now - at > MAX_AGE_DAYS * DAY_MS || amountSgd <= 0 || amountSgd > LIMITS.MAX_AMOUNT_SGD) return [];
     return [{ ...parsed.data, name: parsed.data.name.slice(0, LIMITS.NAME), at, amountSgd }];
   });

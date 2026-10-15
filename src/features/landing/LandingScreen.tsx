@@ -3,6 +3,7 @@ import { CheckIcon, ChevronRightIcon } from "@/components/icons";
 import { AuntieBao } from "@/components/mascot";
 import { AuntieBubble, Button, Card, Money } from "@/components/ui";
 import { ROUTES } from "@/constants";
+import { lkr } from "@/constants/currencies";
 import { MARKETING_FEATURES } from "@/features/marketing/features";
 
 const WRAP = "mx-auto w-full max-w-[1120px] px-[16px] lg:px-[40px]";
@@ -55,9 +56,9 @@ export function LandingScreen() {
             </div>
           </div>
           <AuntieBubble className="text-pretty">
-            Four bubble teas and two food deliveries this week. <Money sgd={83.5} />. You think money grows on pandan trees?
+            Four short eats runs and two food deliveries this week. <Money sgd={lkr(7_850)} />. You think money grows on coconut trees, bung?
           </AuntieBubble>
-          <AuntieBubble className="rounded-[22px] text-pretty">Who is Kelvin Tan to you? Did he tell you to pay today?</AuntieBubble>
+          <AuntieBubble className="rounded-[22px] text-pretty">Who is Kasun Perera to you? He told you to pay today, noh?</AuntieBubble>
         </Card>
       </section>
 

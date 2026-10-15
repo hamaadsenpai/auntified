@@ -1,5 +1,6 @@
 import { AuntieBubble, Button, Card, Chip, Money, Tag } from "@/components/ui";
 import { AuntieBao, type AuntieBaoMood } from "@/components/mascot";
+import { lkr } from "@/constants/currencies";
 import { ROUTES } from "@/constants/routes";
 import { BoardLabel } from "./BoardLabel";
 
@@ -56,7 +57,7 @@ export function KitBoard() {
             </div>
             <div className={TYPE_ROW}>
               <span className={TYPE_LABEL}>Voice 16</span>
-              <span className="font-display text-[16px] leading-[1.4] font-medium">Pandan trees, is it?</span>
+              <span className="font-display text-[16px] leading-[1.4] font-medium">Money grows on coconut trees, ne?</span>
             </div>
             <div className={TYPE_ROW}>
               <span className={TYPE_LABEL}>UI 16</span>
@@ -99,7 +100,7 @@ export function KitBoard() {
                 <AuntieBao mood="meh" width={44} height={41} />
                 <div className="flex flex-col gap-[5px]">
                   <span className="text-[13px] font-bold text-teal">Auntie Kumari</span>
-                  <AuntieBubble className="py-[11px]"><Money sgd={83.5} /> on drinks and delivery. Explain.</AuntieBubble>
+                  <AuntieBubble className="py-[11px]"><Money sgd={lkr(7_850)} /> on short eats and delivery. Explain.</AuntieBubble>
                 </div>
               </div>
               <div className="flex flex-col gap-[12px]">

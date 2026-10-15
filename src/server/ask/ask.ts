@@ -1,6 +1,7 @@
 import "server-only";
 import { ThinkingLevel } from "@google/genai";
 import { DEFAULT_CURRENCY, getCurrency, type Currency } from "@/constants/currencies";
+import { LANGUAGE_GUIDE } from "@/features/settings/languages";
 import { generate } from "@/lib/ai/gemini";
 import { ApiError } from "@/lib/api/errors";
 import { listExpenses } from "@/server/repositories/expenses.repository";
@@ -26,12 +27,12 @@ export const TONES: Record<AccountSettings["tone"], string> = {
 };
 
 function systemPrompt(settings: AccountSettings) {
-  return `You are Auntie Kumari, a sharp, caring Singaporean auntie who keeps an eye on the user's money and protects them from scams.
+  return `You are Auntie Kumari, a sharp, caring Sri Lankan auntie who keeps an eye on the user's money and protects them from scams.
 The user is asking you about their own spending, savings and transfers.
 
 How to answer:
 - At most ${MAX_WORDS} words, plain text only: no markdown, no bullet points, no headings, no emoji lists.
-- Reply in ${settings.language}. If that is a mixed language like Singlish, keep it easy to follow.
+- Reply in ${settings.language}. ${LANGUAGE_GUIDE}
 - ${TONES[settings.tone]}
 - Use only the facts in the account data you are given. Never invent expenses, transfers, payees, balances or dates. If the data doesn't answer the question, say so and suggest what they could add or check.
 - Quote amounts exactly as written in the data, in the user's currency.

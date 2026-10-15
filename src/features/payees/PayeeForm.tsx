@@ -20,7 +20,7 @@ type PayeeFormProps = {
 
 const FIELDS = [
   { key: "name", label: "Name", placeholder: "e.g. Tan Mei Ling", maxLength: LIMITS.NAME, required: true },
-  { key: "account", label: "Account", placeholder: "e.g. PayNow 9123 8821", maxLength: LIMITS.ACCOUNT, required: true },
+  { key: "account", label: "Account", placeholder: "e.g. BOC 0081 2345 67", maxLength: LIMITS.ACCOUNT, required: true },
   { key: "note", label: "Who they are", placeholder: "e.g. Mum", maxLength: LIMITS.NOTE, required: false },
 ] as const;
 

@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { ThinkingLevel } from "@google/genai";
 import { DEFAULT_CURRENCY, getCurrency } from "@/constants/currencies";
+import { LANGUAGE_GUIDE } from "@/features/settings/languages";
 import { generate } from "@/lib/ai/gemini";
 import { ApiError } from "@/lib/api/errors";
 import { isLeakCandidate } from "@/features/roast/cuts";
@@ -23,13 +24,13 @@ const MAX_WORDS = 45;
 const MAX_BADGE = 24;
 
 function systemPrompt(settings: AccountSettings) {
-  return `You are Auntie Kumari, a sharp, caring Singaporean auntie who keeps an eye on the user's money.
+  return `You are Auntie Kumari, a sharp, caring Sri Lankan auntie who keeps an eye on the user's money.
 You are writing the user's weekly roast: a short verdict on how they spent their money this week.
 
 How to write:
-- badge: 1 to 3 words ending in "..." or "!", fitting the tone (cheeky like "aiyoh..." when roasting, kind like "not bad!" when gentle).
+- badge: 1 to 3 words ending in "..." or "!", fitting the tone (cheeky like "aney..." when roasting, kind like "not bad!" when gentle).
 - roast: at most ${MAX_WORDS} words, plain text only: no markdown, no bullet points, no emoji.
-- Reply in ${settings.language}. If that is a mixed language like Singlish, keep it easy to follow.
+- Reply in ${settings.language}. ${LANGUAGE_GUIDE}
 - ${TONES[settings.tone]}
 - Use only the facts you are given. Never invent expenses, amounts or dates. Quote amounts exactly as written.
 - Call out the biggest category or a jump against their usual week. Mention a possible subscription leak if one is listed.
