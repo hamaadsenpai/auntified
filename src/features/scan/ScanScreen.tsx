@@ -12,6 +12,7 @@ import { MessageVerdict } from "@/features/verdicts";
 import { scanService } from "@/services/scan.service";
 import type { ScanRequest, ScanResult } from "@/types/scan";
 import { cn, errorMessage } from "@/utils";
+import { SmsHistory, useSmsHistory } from "./SmsHistory";
 
 const PANEL = "flex flex-col rounded-[24px] border-[2.5px] border-ink px-[24px] py-[20px] shadow-hard-md";
 const IMAGE_TYPES = "image/png,image/jpeg,image/webp,image/heic,image/heif";
@@ -128,6 +129,7 @@ function Empty() {
 /** Paste or screenshot a message and Auntie says if it's a scam, in the pass, warn and block verdict colours. */
 export function ScanScreen() {
   const scan = useScan();
+  const history = useSmsHistory();
   return (
     <>
       <main className="hidden min-h-dvh min-w-0 flex-col gap-[24px] bg-white px-[40px] py-[32px] lg:flex">
@@ -147,6 +149,9 @@ export function ScanScreen() {
             </section>
           )}
         </div>
+        <div className={PANEL}>
+          <SmsHistory history={history} />
+        </div>
       </main>
       <Screen className="lg:hidden">
         <header className="flex h-[64px] flex-none items-center px-[20px]">
@@ -155,6 +160,7 @@ export function ScanScreen() {
         <main className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[20px] pb-[20px] *:shrink-0">
           {scan.result ? <MessageVerdict result={scan.result} /> : <Empty />}
           <ScanForm id="scan" scan={scan} variant="bold" />
+          <SmsHistory history={history} />
         </main>
         <BottomNav active="scan" />
       </Screen>

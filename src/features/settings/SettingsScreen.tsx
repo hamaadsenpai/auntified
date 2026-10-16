@@ -9,6 +9,7 @@ import { CurrencyPicker } from "./CurrencyPicker";
 import { LogoutButton } from "./LogoutButton";
 import { LanguageSelect, SettingsLoadError, ToneOptions, VoiceSwitch } from "./SettingsControls";
 import { AccountRows, MoneyLockRow, SavingsGoalRow, TrustedContactRow } from "./SettingsRows";
+import { SmsImport } from "./SmsImport";
 
 export function SettingsScreen() {
   return (
@@ -32,6 +33,7 @@ export function SettingsScreen() {
           <VoiceSwitch variant="mobile" />
           <TrustedContactRow variant="mobile" />
           <MoneyLockRow variant="mobile" />
+          <SmsImport variant="mobile" />
           <SavingsGoalRow variant="mobile" />
           <Link
             href={ROUTES.PATTERNS}

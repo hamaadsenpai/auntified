@@ -12,6 +12,10 @@ export const COLLECTIONS = {
   EXPENSES: "expenses",
   BILLS: "bills",
   CREDITS: "credits",
+  /** Texts forwarded by the iPhone Shortcut and scam-checked: users/{uid}/smsScans. */
+  SMS_SCANS: "smsScans",
+  /** Top level: smsKeys/{sha256 of key} → { uid }, so the SMS endpoint can find the user from a key. */
+  SMS_KEYS: "smsKeys",
 } as const;
 
 export const ENDPOINTS = {
@@ -32,6 +36,11 @@ export const ENDPOINTS = {
   ROAST: "/api/roast",
   DEMO: "/api/demo",
   SCAN: "/api/scan",
+  SMS_KEY: "/api/me/sms-key",
+  /** Called by the iPhone Shortcut with a bearer key, not the session cookie. */
+  SMS_IMPORT: "/api/sms",
+  SMS_SCANS: "/api/sms/scans",
+  SMS_SCAN: (id: string) => `/api/sms/scans/${encodeURIComponent(id)}`,
   ANALYST: "/api/analyst",
   STATEMENTS: "/api/statements",
 } as const;
