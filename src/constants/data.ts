@@ -44,6 +44,8 @@ export const LIMITS = {
   MAX_AMOUNT_SGD: 10_000_000,
   /** A message pasted into the scam scanner. */
   SCAN_TEXT: 2000,
+  /** Forwarded texts Auntie scam-checks per user per day, so a looping Shortcut can't run up the Gemini bill. */
+  SMS_SCANS_PER_DAY: 100,
   /** A screenshot for the scanner, or a bank statement to import. */
   UPLOAD_BYTES: 4 * 1024 * 1024,
 } as const;

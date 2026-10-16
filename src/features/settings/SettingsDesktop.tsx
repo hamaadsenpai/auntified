@@ -8,6 +8,7 @@ import { CurrencyPicker } from "./CurrencyPicker";
 import { LogoutButton } from "./LogoutButton";
 import { LanguageSelect, SettingsLoadError, ToneOptions, VoiceSwitch } from "./SettingsControls";
 import { AccountRows, MoneyLockRow, SavingsGoalRow, TrustedContactRow } from "./SettingsRows";
+import { SmsImport } from "./SmsImport";
 
 const PANEL = "flex flex-col rounded-[24px] border-[2.5px] border-ink px-[24px] py-[20px] shadow-hard-md";
 
@@ -48,6 +49,12 @@ export function SettingsDesktop() {
               </Suspense>
               <LogoutButton />
             </div>
+          </section>
+          <section aria-labelledby="dsms-h" className={`${PANEL} gap-[10px]`}>
+            <h2 id="dsms-h" className="m-0 font-display text-[17px] font-bold">
+              iPhone SMS scam check
+            </h2>
+            <SmsImport variant="desktop" />
           </section>
           <section aria-labelledby="dsafety-h" className={`${PANEL} gap-[4px]`}>
             <h2 id="dsafety-h" className="m-0 pb-[6px] font-display text-[17px] font-bold">
