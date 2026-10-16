@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { Screen } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
 import { Avatar, Button, Card, FIELD_BASE, FIELD_VARIANTS, Money } from "@/components/ui";
 import { LIMITS, ROUTES, withTransfer } from "@/constants";
-import { useSettings, useTransfersStore } from "@/store";
+import { useCurrency, useSettings, useTransfersStore } from "@/store";
 import type { Transfer } from "@/types/transfer";
-import { cn, errorMessage } from "@/utils";
+import { cn, errorMessage, speak } from "@/utils";
+import { formatMoney } from "@/utils/format";
 import { ContactAlertNote, RiskBreakdown } from "./RiskBreakdown";
 import { formatWhen, TransferFallback, useTransferParam } from "./transfer-param";
 import { PANEL, VerdictDesktop } from "./VerdictDesktop";
@@ -24,10 +25,19 @@ const initials = (name: string) =>
 
 export function BlockedScreen() {
   const { transfer, missing } = useTransferParam();
+  const currency = useCurrency();
+  const { status, settings } = useSettings();
+  const headline = transfer?.reasons[0];
+  // Only once loaded: the default before load has voiceReplies on.
+  const voice = status === "ready" && settings.voiceReplies;
+  const line =
+    transfer &&
+    `I stopped ${formatMoney(transfer.amountSgd, currency)} to ${transfer.payeeName}. ${headline ?? "That is how scams look."}`;
+  useEffect(() => {
+    if (voice && line) speak(line);
+  }, [voice, line]);
 
   if (!transfer) return <TransferFallback missing={missing} />;
-
-  const headline = transfer.reasons[0];
 
   return (
     <>

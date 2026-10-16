@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { io } from "next/cache";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import { COLLECTIONS, DEFAULT_SETTINGS, LIMITS, SALARY_SGD } from "@/constants";
 import { ApiError } from "@/lib/api/errors";
@@ -13,6 +13,26 @@ import { accountsFrom } from "./accounts.repository";
 import { seedFirstSalary } from "./credits.repository";
 
 const users = db.collection(COLLECTIONS.USERS);
+
+const AI_WINDOW_MS = 60 * 60 * 1000;
+// Shared by every Gemini route (check turns, ask + its speech, roast re-runs, scan, statements), so above the audit's 30.
+const AI_CALLS_PER_WINDOW = 60;
+
+/** Counts one Gemini call against the user's hourly budget; 429 once it is spent. Await it before parsing the body. */
+export async function consumeAiQuota(uid: string) {
+  const ref = users.doc(uid);
+  await db.runTransaction(async (tx) => {
+    const data = (await tx.get(ref)).data();
+    const start = data?.aiWindowStart instanceof Timestamp ? data.aiWindowStart.toMillis() : 0;
+    const now = Date.now();
+    if (now - start >= AI_WINDOW_MS) {
+      tx.set(ref, { aiWindowStart: Timestamp.fromMillis(now), aiCount: 1 }, { merge: true });
+      return;
+    }
+    if ((data?.aiCount ?? 0) >= AI_CALLS_PER_WINDOW) throw new ApiError(429, "RATE_LIMITED", "Auntie needs a break. Try again later.");
+    tx.update(ref, { aiCount: FieldValue.increment(1) });
+  });
+}
 
 /**
  * Creates `users/{uid}` on first sign-in (paid their first salary, so the balance isn't 0) and stamps `lastLoginAt` on every one after.

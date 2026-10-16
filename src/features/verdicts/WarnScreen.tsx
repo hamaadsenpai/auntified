@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { BackHeader, Screen } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
 import { Button, Money, RiskMeter } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { useCurrency, usePayeesStore, useSettingsStore, useTransfersStore } from "@/store";
+import { useCurrency, usePayeesStore, useSettings, useSettingsStore, useTransfersStore } from "@/store";
 import { usePayDraftStore } from "@/store/pay-draft.store";
 import type { Transfer } from "@/types/transfer";
-import { errorMessage } from "@/utils";
+import { errorMessage, speak } from "@/utils";
 import { convertFromSgd } from "@/utils/format";
 import { useNow } from "@/features/roast/week";
 import { ContactAlertNote, RiskBreakdown } from "./RiskBreakdown";
@@ -25,6 +25,13 @@ export function WarnScreen() {
   const now = useNow();
   const [confirm, setConfirm] = useState("");
   const [pending, setPending] = useState<"overridden" | "cancelled" | null>(null);
+  const { status, settings } = useSettings();
+  // Only once loaded: the default before load has voiceReplies on.
+  const voice = status === "ready" && settings.voiceReplies;
+  const line = transfer && `${transfer.payeeName}, this amount, right now? Not like you.`;
+  useEffect(() => {
+    if (voice && line) speak(line);
+  }, [voice, line]);
 
   if (!transfer) return <TransferFallback missing={missing} />;
 

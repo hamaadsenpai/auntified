@@ -83,5 +83,12 @@ export function authErrorMessage(err: unknown): string | null {
 
 /** Only allow same-site paths, so `?next=` can't send people to another domain. */
 export function safeNextPath(raw: string | null, fallback: string) {
-  return raw && raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/\\") ? raw : fallback;
+  if (raw === null) return fallback;
+  // Let the URL parser decide, since it strips tabs and backslashes that prefix checks miss.
+  try {
+    const url = new URL(raw, location.origin);
+    return url.origin === location.origin ? url.pathname + url.search + url.hash : fallback;
+  } catch {
+    return fallback;
+  }
 }
