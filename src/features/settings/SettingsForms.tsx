@@ -2,11 +2,10 @@
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import toast from "react-hot-toast";
-import { Button, Input, Money, Select, type SelectVariant } from "@/components/ui";
-import { LIMITS, SALARY_SGD } from "@/constants";
+import { Button, Input, Select, type SelectVariant } from "@/components/ui";
+import { LIMITS } from "@/constants";
 import type { Currency } from "@/constants/currencies";
 import { useCreditsStore, useCurrency, useSettingsStore } from "@/store";
-import type { CreateCredit } from "@/types/credit";
 import type { UpdateSettings } from "@/types/settings";
 import { accountsOf, MAIN_ACCOUNT_ID } from "@/utils/accounts";
 import { errorMessage } from "@/utils";
@@ -178,7 +177,7 @@ export function AddAccountForm({ variant, onClose }: FormProps) {
   );
 }
 
-/** Credits a demo account: a typed top-up, or one simulated salary. */
+/** Credits a demo account with a typed top-up. */
 export function AddMoneyForm({ variant, onClose }: FormProps) {
   const id = useId();
   const currency = useCurrency();
@@ -187,12 +186,11 @@ export function AddMoneyForm({ variant, onClose }: FormProps) {
   const [amount, setAmount] = useState("");
   const { pending, run } = useSettingsForm(onClose);
   const step = currency.decimals ? 0.01 : 1;
-  const credit = (body: Omit<CreateCredit, "accountId">) => void run(() => useCreditsStore.getState().create({ ...body, accountId }));
 
   function topUp() {
     const amountSgd = toSgd(amount, currency, { positive: true });
     if (amountSgd === null) toast.error("Enter an amount above 0.");
-    else credit({ kind: "topup", amountSgd });
+    else void run(() => useCreditsStore.getState().create({ kind: "topup", amountSgd, accountId }));
   }
 
   return (
@@ -221,9 +219,6 @@ export function AddMoneyForm({ variant, onClose }: FormProps) {
           onChange={(e) => setAmount(e.target.value)}
         />
       </Field>
-      <Button variant="secondary" disabled={pending} onClick={() => credit({ kind: "salary", amountSgd: SALARY_SGD })} className="disabled:opacity-60">
-        Pay salary (<Money sgd={SALARY_SGD} whole />)
-      </Button>
     </FormShell>
   );
 }

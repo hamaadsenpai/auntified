@@ -7,7 +7,7 @@ import { AuntieBao } from "@/components/mascot";
 import { AuntieBubble, Card, Money } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { useHome } from "./home-data";
-import { GoalProgress, WeekNudge, WeekSentence } from "./HomeParts";
+import { GoalProgress, OtherAccounts, WeekNudge, WeekSentence } from "./HomeParts";
 import { LoadNote } from "./LoadNote";
 
 export function HomeMobile() {
@@ -31,6 +31,7 @@ export function HomeMobile() {
         <LoadNote load={home.settingsLoad}>
           <span className="font-display text-[40px] leading-[1.05] font-bold"><Money sgd={settings.balanceSgd} /></span>
           <span className="text-[13px] font-medium text-muted">{settings.accountName}</span>
+          <OtherAccounts accounts={settings.accounts} />
         </LoadNote>
       </div>
       <div className="grid flex-none grid-cols-[1fr_1fr] gap-[10px] border-b border-line px-[20px] pb-[16px]">

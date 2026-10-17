@@ -8,7 +8,7 @@ import { ROUTES } from "@/constants";
 import { formatWeekday, STATUS_TAG } from "@/features/ledger/history";
 import { useHome } from "./home-data";
 import { HomeAskForm } from "./HomeAskForm";
-import { GoalProgress, WeekNudge, WeekSentence } from "./HomeParts";
+import { GoalProgress, OtherAccounts, WeekNudge, WeekSentence } from "./HomeParts";
 import { LoadNote } from "./LoadNote";
 
 const CARD = "flex flex-col gap-[4px] rounded-[22px] px-[24px] py-[20px] shadow-hard-md";
@@ -68,6 +68,11 @@ export function HomeDesktop() {
           </LoadNote>
         </Card>
       </div>
+      {settings.accounts.length > 0 && (
+        <Card className={CARD}>
+          <OtherAccounts accounts={settings.accounts} className="" />
+        </Card>
+      )}
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-[24px]">
         <section aria-label="Auntie's chat" className={`${PANEL} gap-[14px] p-[24px]`}>
           <div className="flex max-w-[520px] items-start gap-[12px]">

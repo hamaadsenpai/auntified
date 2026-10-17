@@ -146,7 +146,7 @@ export function AccountRows({ variant }: { variant: Variant }) {
       {settings.accounts.length < LIMITS.ACCOUNTS && (
         <SimpleRow variant={variant} label="Another account" value="Savings, joint or any other" Form={AddAccountForm} editLabel="Add" />
       )}
-      <SimpleRow variant={variant} label="Add money" value="Top up or pay salary" Form={AddMoneyForm} editLabel="Add" />
+      <SimpleRow variant={variant} label="Add money" value="Top up" Form={AddMoneyForm} editLabel="Add" />
     </>
   );
 }

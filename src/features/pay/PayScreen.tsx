@@ -13,7 +13,7 @@ import type { ApiFailure } from "@/types/api";
 import type { CreatePayee, Payee } from "@/types/payee";
 import type { CreateTransfer, Transfer } from "@/types/transfer";
 import { errorMessage } from "@/utils";
-import { accountOf } from "@/utils/accounts";
+import { accountOf, sendableSgd } from "@/utils/accounts";
 import { AmountPad } from "./AmountPad";
 import { FromAccountSelect } from "./FromAccountSelect";
 
@@ -68,15 +68,19 @@ export function useSubmitDraft() {
     const { transferId, payeeId, amountSgd, reference, fromAccountId } = usePayDraftStore.getState();
     if (!payeeId) return toast.error("Choose who you are paying first.");
     if (!(amountSgd > 0)) return toast.error("Enter an amount more than zero.");
+    // The picked account, or the main one if it was removed since.
+    const { settings } = useSettingsStore.getState();
+    const from = accountOf(settings, fromAccountId);
+    if (amountSgd > sendableSgd(settings, from)) return toast.error(`Insufficient funds in ${from.name}.`);
     setPending(true);
     try {
-      // The picked account, or the main one if it was removed since.
-      const from = accountOf(useSettingsStore.getState().settings, fromAccountId).id;
-      const transfer = await saveDraftTransfer(transferId, { payeeId, amountSgd, reference: reference.trim(), fromAccountId: from });
+      const transfer = await saveDraftTransfer(transferId, { payeeId, amountSgd, reference: reference.trim(), fromAccountId: from.id });
       usePayDraftStore.getState().setTransferId(transfer.id);
       router.push(withTransfer(route, transfer.id));
     } catch (err) {
       toast.error(errorMessage(err));
+    } finally {
+      // The page stays mounted behind the next one, so coming back would still show "Creating transfer…".
       setPending(false);
     }
   }

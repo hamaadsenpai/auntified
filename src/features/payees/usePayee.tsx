@@ -223,7 +223,7 @@ export function PayeeBalance({ m, variant = "mobile" }: { m: PayeeModel; variant
         </h2>
         {owedSgd !== 0 && (
           <Button variant="secondary" className="h-[40px] flex-none px-[14px] disabled:opacity-60" disabled={m.pending !== null} onClick={m.settle}>
-            {m.pending === "settle" ? "Settling…" : "Settle up"}
+            {m.pending === "settle" ? "Marking…" : "Mark as settled"}
           </Button>
         )}
       </div>

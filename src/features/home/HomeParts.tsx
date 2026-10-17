@@ -1,12 +1,29 @@
 import Link from "next/link";
 import { Money, NudgeCard, ProgressBar } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import type { SavingsGoal, Tone } from "@/types/settings";
+import { cn } from "@/utils";
+import type { Account, SavingsGoal, Tone } from "@/types/settings";
 import { formatDeadline, type useHome } from "./home-data";
 
 type Week = NonNullable<ReturnType<typeof useHome>["week"]>;
 
 const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
+
+/** The extra accounts, set apart from the main balance by a rule and a heading; nothing when there are none. */
+export function OtherAccounts({ accounts, className = "mt-[10px] border-t border-line pt-[10px]" }: { accounts: Account[]; className?: string }) {
+  if (accounts.length === 0) return null;
+  return (
+    <div className={cn("flex flex-col gap-[6px]", className)}>
+      <span className="text-[11px] font-semibold tracking-[0.06em] text-muted uppercase">Other accounts</span>
+      {accounts.map((a) => (
+        <div key={a.id} className="flex items-baseline justify-between gap-[12px] text-[15px]">
+          <span className="font-semibold text-ink">{a.name}</span>
+          <span className="font-display font-bold"><Money sgd={a.balanceSgd} /></span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /** Auntie's line about the last 7 days of expenses. */
 export function WeekSentence({ week, tone }: { week: Week; tone: Tone }) {

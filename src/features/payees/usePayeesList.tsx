@@ -140,10 +140,10 @@ export function WhoOwesWhom({ m }: { m: PayeesListModel }) {
                 type="button"
                 disabled={m.pending !== null}
                 onClick={() => m.settle(d)}
-                aria-label={`Settle up: ${debtText(d).trim()}`}
+                aria-label={`Mark as settled: ${debtText(d).trim()}`}
                 className="min-h-[44px] cursor-pointer text-[14px] font-semibold text-teal disabled:cursor-default disabled:opacity-60"
               >
-                {m.pending === `settle:${d.from}|${d.to}` ? "Settling…" : "Settle up"}
+                {m.pending === `settle:${d.from}|${d.to}` ? "Marking…" : "Mark as settled"}
               </button>
             </li>
           ))}
