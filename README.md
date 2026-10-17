@@ -54,8 +54,6 @@ All AI runs on the server through Google Gemini (`@google/genai`). The API key n
 
 **The risk score is half rules, half AI.** `scoreRules()` in `src/server/check/transfer.ts` is deterministic and adds up to **46** points: a new payee, a first transfer, 3x the usual amount, scam reports, an odd hour in Sri Lanka time, urgency words, or more than the balance. Gemini adds up to **54** from your answers. The total maps to the bands pass (under 40), warn (40 to 69) and block (70 and up). The model can't push a payment past its question budget, and its score is clamped.
 
-**Auntie's voice.** Verdicts and replies are read aloud through `POST /api/speak`, which sends the text and the user's language to a Gemini TTS model (`GEMINI_TTS_MODEL`, default `gemini-3.8-flash-tts`) with an auntie persona. If that fails, the app falls back to the browser's built-in voice.
-
 **Rate limit.** Every AI route shares a per-user limit of 60 calls an hour. Past it, the route returns `429 RATE_LIMITED`, so a busy demo can't burn through the Gemini quota.
 
 ## Tech stack
@@ -83,7 +81,6 @@ Requirements: Node 22, a Firebase project with Auth (Email/Password and Google) 
    GEMINI_API_KEY=
    GEMINI_MODEL=gemini-3.8-flash            # optional, this is the default
    GEMINI_FALLBACK_MODEL=gemini-3.6-flash   # optional, this is the default
-   GEMINI_TTS_MODEL=                        # optional, has a default
 
    # Firebase web app config (Project settings → Your apps)
    NEXT_PUBLIC_FIREBASE_API_KEY=
