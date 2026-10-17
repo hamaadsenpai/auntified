@@ -37,6 +37,8 @@ type QuickCheck = {
   error: string | null;
   answer: (text: string) => void;
   retry: () => void;
+  /** Wipe the chat when the user moves on, so coming back to this page starts empty. */
+  clear: () => void;
 };
 
 const QuickCheckContext = createContext<QuickCheck | null>(null);
@@ -47,6 +49,15 @@ const QuickCheckContext = createContext<QuickCheck | null>(null);
  */
 export function QuickCheckProvider({ children }: { children: React.ReactNode }) {
   const transferId = useSearchParams().get("id");
+  // The page stays mounted behind the next one (cacheComponents), so a new transfer needs fresh state.
+  return (
+    <QuickCheckInner key={transferId} transferId={transferId}>
+      {children}
+    </QuickCheckInner>
+  );
+}
+
+function QuickCheckInner({ transferId, children }: { transferId: string | null; children: React.ReactNode }) {
   const transfer = useTransfers().items.find((t) => t.id === transferId);
   const [transcript, setTranscript] = useState<CheckTurn[]>([]);
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -66,8 +77,9 @@ export function QuickCheckProvider({ children }: { children: React.ReactNode }) 
         if (res.done) {
           // The server wrote the verdict onto the transfer; a pass also moved the balance and the payee's count.
           void useTransfersStore.getState().fetchOne(transferId).catch(() => {});
+          // Any verdict ends this draft; otherwise the next /pay reuses its reference and edits the old transfer.
+          usePayDraftStore.getState().reset();
           if (res.verdict === "pass") {
-            usePayDraftStore.getState().reset();
             void useSettingsStore.getState().load(true);
             void usePayeesStore.getState().load(true);
           }
@@ -105,6 +117,12 @@ export function QuickCheckProvider({ children }: { children: React.ReactNode }) 
     [ask, error, pending, result, transcript],
   );
 
+  const clear = useCallback(() => {
+    setTranscript([]);
+    setResult(null);
+    setError(null);
+  }, []);
+
   const retry = useCallback(() => void ask(transcript), [ask, transcript]);
 
   const verdict = result?.verdict ?? "pass";
@@ -112,7 +130,7 @@ export function QuickCheckProvider({ children }: { children: React.ReactNode }) 
   const note = result?.flags.length ? `Checked payee history: ${result.flags.join(", ")}` : null;
 
   return (
-    <QuickCheckContext.Provider value={{ transferId, transfer, nextHref, note, transcript, result, pending, error, answer, retry }}>
+    <QuickCheckContext.Provider value={{ transferId, transfer, nextHref, note, transcript, result, pending, error, answer, retry, clear }}>
       {children}
     </QuickCheckContext.Provider>
   );

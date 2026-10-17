@@ -77,6 +77,8 @@ export function useSubmitDraft() {
       const transfer = await saveDraftTransfer(transferId, { payeeId, amountSgd, reference: reference.trim(), fromAccountId: from.id });
       usePayDraftStore.getState().setTransferId(transfer.id);
       router.push(withTransfer(route, transfer.id));
+      // Inputs always start empty when coming back to /pay.
+      usePayDraftStore.getState().reset();
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {

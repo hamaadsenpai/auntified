@@ -11,7 +11,7 @@ import { VERDICT_CTA, useQuickCheck } from "./QuickCheckProvider";
 import { useDictation } from "./useDictation";
 
 export function CheckScreen() {
-  const { transferId, transfer, nextHref, note, transcript, result, pending, error, answer, retry } = useQuickCheck();
+  const { transferId, transfer, nextHref, note, transcript, result, pending, error, answer, retry, clear } = useQuickCheck();
   const [draft, setDraft] = useState("");
   const dictation = useDictation((t) => setDraft((d) => (d ? `${d} ${t}` : t)));
   const main = useRef<HTMLElement>(null);
@@ -140,7 +140,7 @@ export function CheckScreen() {
       </main>
       {done && result ? (
         <div className="flex flex-none flex-col gap-[8px] border-t border-line px-[16px] pt-[12px] pb-[20px]">
-          <Button href={nextHref}>{VERDICT_CTA[result.verdict]}</Button>
+          <Button href={nextHref} onClick={clear}>{VERDICT_CTA[result.verdict]}</Button>
         </div>
       ) : (
         <form onSubmit={submit} className="flex flex-none flex-col gap-[8px] border-t border-line px-[16px] pt-[12px] pb-[20px]">

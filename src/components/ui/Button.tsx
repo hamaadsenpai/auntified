@@ -19,7 +19,7 @@ export function Button({ variant = "primary", href, className, children, ...prop
   if (href !== undefined) {
     const linkClass = cn(base, "flex items-center justify-center no-underline", className);
     return href.startsWith("/") ? (
-      <Link href={href} className={linkClass}>
+      <Link href={href} className={linkClass} onClick={props.onClick as React.MouseEventHandler<HTMLAnchorElement> | undefined}>
         {children}
       </Link>
     ) : (

@@ -12,7 +12,7 @@ import { useDictation } from "./useDictation";
 const USER = "max-w-[400px] rounded-[20px_20px_4px_20px] px-[16px] py-[12px] text-[16px]";
 
 export function CheckDesktop() {
-  const { transferId, transfer, nextHref, note, transcript, result, pending, error, answer, retry } = useQuickCheck();
+  const { transferId, transfer, nextHref, note, transcript, result, pending, error, answer, retry, clear } = useQuickCheck();
   const [draft, setDraft] = useState("");
   const dictation = useDictation((t) => setDraft((d) => (d ? `${d} ${t}` : t)));
   const firstAnswer = transcript.findIndex((t) => t.role === "user");
@@ -155,7 +155,7 @@ export function CheckDesktop() {
         </div>
         {done && result ? (
           <div className="flex border-t border-line px-[32px] pt-[16px] pb-[28px]">
-            <Button href={nextHref} className="px-[28px]">
+            <Button href={nextHref} onClick={clear} className="px-[28px]">
               {VERDICT_CTA[result.verdict]}
             </Button>
           </div>
