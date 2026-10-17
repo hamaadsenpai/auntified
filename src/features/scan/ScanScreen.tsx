@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { BottomNav, Screen } from "@/components/layout";
 import { AuntieBao } from "@/components/mascot";
 import { Button, FIELD_BASE, FIELD_VARIANTS } from "@/components/ui";
-import { LIMITS } from "@/constants";
+import { LIMITS, ROUTES } from "@/constants";
 import { DEMO_SCAM_SMS } from "@/constants/demo";
 import { MessageVerdict } from "@/features/verdicts";
 import { scanService } from "@/services/scan.service";
@@ -109,6 +109,9 @@ function ScanForm({ id, scan, variant }: { id: string; scan: Scan; variant: "bol
       </div>
       <Button type="submit" className="disabled:opacity-60" disabled={scan.pending}>
         {scan.pending ? "Auntie is reading…" : "Check this message"}
+      </Button>
+      <Button variant="secondary" href={ROUTES.GUARD}>
+        Listen to my call
       </Button>
       <p className="m-0 text-[12px] leading-[1.4] font-medium text-muted">Never paste passwords or OTPs. Auntie only reads what you send here.</p>
     </form>

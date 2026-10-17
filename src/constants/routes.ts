@@ -19,6 +19,7 @@ export const ROUTES = {
   PAYEE: (id: string) => `/payees/${id}`,
   LEDGER: "/ledger",
   SCAN: "/scan",
+  GUARD: "/guard",
   ANALYST: "/analyst",
   SETTINGS: "/settings",
   DEMO: "/demo",
