@@ -2,13 +2,9 @@ import "server-only";
 import { Modality } from "@google/genai";
 import { gemini } from "@/lib/ai/gemini";
 import { ApiError } from "@/lib/api/errors";
-import { AUNTIE_ACCENT, AUNTIE_VOICE } from "@/constants/voice";
+import { AUNTIE_VOICE } from "@/constants/voice";
 import { env } from "@/lib/env.server";
 import type { SpeakResult } from "@/types/speak";
-
-function stylePrompt(language: string) {
-  return `Read the text after the colon aloud word for word, in ${language}, as a sharp, caring auntie looking out for family. ${AUNTIE_ACCENT} Never introduce yourself or say any name. Do not add or leave out any words:`;
-}
 
 /** Browsers can't play raw PCM, so wrap Gemini's 16-bit mono PCM in a 44-byte WAV header. */
 function toWav(pcm: Buffer, rate: number) {
@@ -29,12 +25,13 @@ function toWav(pcm: Buffer, rate: number) {
 }
 
 /** Auntie reading `text` aloud with Gemini TTS, as a playable data URL. */
-export async function speakText(text: string, language: string): Promise<SpeakResult> {
+// Style instructions are deliberately not sent: the TTS model reads them aloud. The voice name sets the sound.
+export async function speakText(text: string): Promise<SpeakResult> {
   let audio: { data?: string; mimeType?: string } | undefined;
   try {
     const res = await gemini.models.generateContent({
       model: env.GEMINI_TTS_MODEL,
-      contents: `${stylePrompt(language)}\n${text}`,
+      contents: text,
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: AUNTIE_VOICE } } },

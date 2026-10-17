@@ -18,7 +18,7 @@ export const POST = withHandler(
     await consumeAiQuota(user.uid);
     const parsed = schema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) throw ApiError.badRequest("Invalid speech.");
-    return speakText(parsed.data.text, parsed.data.language);
+    return speakText(parsed.data.text);
   },
   { auth: true },
 );
