@@ -2,14 +2,12 @@ import "server-only";
 import { Modality } from "@google/genai";
 import { gemini } from "@/lib/ai/gemini";
 import { ApiError } from "@/lib/api/errors";
+import { AUNTIE_ACCENT, AUNTIE_VOICE } from "@/constants/voice";
 import { env } from "@/lib/env.server";
 import type { SpeakResult } from "@/types/speak";
 
-// A warm prebuilt Gemini voice; the style prompt does the auntie part.
-const VOICE = "Sulafat";
-
 function stylePrompt(language: string) {
-  return `Read the text after the colon aloud word for word, in ${language}, as Auntie Kumari: a sharp, caring Sri Lankan auntie. Sound warm and brisk, a little cheeky, like she is looking out for family. Do not add or leave out any words:`;
+  return `Read the text after the colon aloud word for word, in ${language}, as a sharp, caring auntie looking out for family. ${AUNTIE_ACCENT} Never introduce yourself or say any name. Do not add or leave out any words:`;
 }
 
 /** Browsers can't play raw PCM, so wrap Gemini's 16-bit mono PCM in a 44-byte WAV header. */
@@ -39,7 +37,7 @@ export async function speakText(text: string, language: string): Promise<SpeakRe
       contents: `${stylePrompt(language)}\n${text}`,
       config: {
         responseModalities: [Modality.AUDIO],
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE } } },
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: AUNTIE_VOICE } } },
       },
     });
     audio = res.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;

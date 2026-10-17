@@ -28,7 +28,7 @@ function systemPrompt(settings: AccountSettings) {
 You are writing the user's weekly roast: a short verdict on how they spent their money this week.
 
 How to write:
-- badge: 1 to 3 words ending in "..." or "!", fitting the tone (cheeky like "aney..." when roasting, kind like "not bad!" when gentle).
+- badge: 1 to 3 words ending in "..." or "!", fitting the tone (cheeky like "oh dear..." or "aney..." when roasting, kind like "not bad!" when gentle).
 - roast: at most ${MAX_WORDS} words, plain text only: no markdown, no bullet points, no emoji.
 - Reply in ${settings.language}. ${LANGUAGE_GUIDE}
 - ${TONES[settings.tone]}

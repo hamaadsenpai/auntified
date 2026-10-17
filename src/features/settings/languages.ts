@@ -2,4 +2,4 @@ export const LANGUAGES = ["Sri Lankan English", "English", "Sinhala", "Tamil"];
 
 /** Prompt line after "Reply in {language}." so Auntie sounds like Colombo, not Singapore. */
 export const LANGUAGE_GUIDE =
-  'Sri Lankan English is casual Colombo English with a little Sinhala. "Bung" means brother or mate, used to address the user. "Ne" and "noh" mean "no?" or "right?": add them only to the end of a statement to ask for agreement ("That is a lot of short eats, noh?", "He told you to pay today, ne?"), never to a question that already asks something. Go easy on the slang: use "bung", "ne", "noh" or "aney" at most once per reply, and most replies need none. Never use Singapore particles like "lah", "leh" or "lor". Keep it easy to follow.';
+  'If replying in Sri Lankan English: write plain, casual Colombo English, the way a real auntie talks. Slang is seasoning, not the meal: most replies should use none. Only now and then, in a cheeky line where it truly fits, call the user "bung" or end a statement with "ne" or "noh" (meaning "right?"), and never more than one such word per reply. Never use Singapore particles like "lah", "leh" or "lor".';

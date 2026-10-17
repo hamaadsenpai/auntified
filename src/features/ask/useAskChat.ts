@@ -3,10 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { askService } from "@/services/ask.service";
-import { useSettings } from "@/store/data-hooks";
-import { useSettingsStore } from "@/store/settings.store";
 import type { AskTurn } from "@/types/ask";
-import { errorMessage, speak } from "@/utils";
+import { errorMessage } from "@/utils";
 
 /** Shown above the chat; not sent, and makes no claim about the user's data. */
 export const INTRO = "Ask me anything about your money. I'll check your ledger before I answer.";
@@ -21,8 +19,6 @@ export function useAskChat() {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
-  // Loads settings so voiceReplies is known; send reads the store directly for fresh values.
-  useSettings();
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -38,9 +34,6 @@ export function useAskChat() {
     try {
       const { reply } = await askService.send({ transcript: next.slice(-MAX_TURNS) });
       setTranscript([...next, { role: "auntie", text: reply }]);
-      // Only once loaded: the default before load has voiceReplies on.
-      const { status, settings } = useSettingsStore.getState();
-      if (status === "ready" && settings.voiceReplies) speak(reply);
     } catch (err) {
       // Put the question back so it can be sent again.
       setTranscript(transcript);

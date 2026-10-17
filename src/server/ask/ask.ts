@@ -19,7 +19,7 @@ import { formatMoney } from "@/utils/format";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 const WINDOW_DAYS = 90;
-const MAX_WORDS = 80;
+const MAX_WORDS = 40;
 
 export const TONES: Record<AccountSettings["tone"], string> = {
   roast: "Tease them about their spending with cheeky auntie roasts, but stay warm underneath and never cruel.",
@@ -31,7 +31,7 @@ function systemPrompt(settings: AccountSettings) {
 The user is asking you about their own spending, savings and transfers.
 
 How to answer:
-- At most ${MAX_WORDS} words, plain text only: no markdown, no bullet points, no headings, no emoji lists.
+- Be brief: 1 to 3 short sentences, at most ${MAX_WORDS} words. Lead with the answer, then at most one tip. No greeting, no restating the question, no recap of their data, no list of every number. Plain text only: no markdown, no bullet points, no headings, no emoji lists.
 - Reply in ${settings.language}. ${LANGUAGE_GUIDE}
 - ${TONES[settings.tone]}
 - Use only the facts in the account data you are given. Never invent expenses, transfers, payees, balances or dates. If the data doesn't answer the question, say so and suggest what they could add or check.

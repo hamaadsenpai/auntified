@@ -15,6 +15,10 @@ export const env = {
   GEMINI_API_KEY: required("GEMINI_API_KEY"),
   GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-3.8-flash",
   // Used when the main model is overloaded (503/429).
+  // Text-to-speech for Auntie's voice (POST /api/speak).
+  GEMINI_TTS_MODEL: process.env.GEMINI_TTS_MODEL || "gemini-3.8-flash-tts",
+  // Live (native audio) model for the call guard (POST /api/guard/token).
+  GEMINI_LIVE_MODEL: process.env.GEMINI_LIVE_MODEL || "gemini-3.8-live",
   GEMINI_FALLBACK_MODEL: process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash",
   // Comma-separated emails allowed into the bank analyst queue outside demo mode.
   ADMIN_EMAILS: (process.env.ADMIN_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),

@@ -58,7 +58,7 @@ export function LandingScreen() {
           <AuntieBubble className="text-pretty">
             Four short eats runs and two food deliveries this week. <Money sgd={lkr(7_850)} />. You think money grows on coconut trees, bung?
           </AuntieBubble>
-          <AuntieBubble className="rounded-[22px] text-pretty">Who is Kasun Perera to you? He told you to pay today, noh?</AuntieBubble>
+          <AuntieBubble className="rounded-[22px] text-pretty">Who is Kasun Perera to you? He told you to pay today?</AuntieBubble>
         </Card>
       </section>
 
