@@ -34,7 +34,6 @@ export const ENDPOINTS = {
   CREDITS: "/api/credits",
   ASK: "/api/ask",
   ROAST: "/api/roast",
-  SPEAK: "/api/speak",
   DEMO: "/api/demo",
   SCAN: "/api/scan",
   SMS_KEY: "/api/me/sms-key",
